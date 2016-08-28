@@ -1,7 +1,6 @@
 package com.yoo.ymh.whoru.view.fragment;
 
 
-import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -70,9 +69,8 @@ public class GroupFragment extends Fragment {
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_group, container, false);
         ButterKnife.bind(this, v);
-        Log.e("GrFrg","onCreateView");
+        initViews();
         return v;
-
     }
 
     public void initViews() {
@@ -138,87 +136,75 @@ public class GroupFragment extends Fragment {
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        Log.e("GrFrg","onCreateOptionsMenu");
-    }
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        initData();
 
-    //프래그먼트가 보였을때 콜백.
-    @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if(isVisibleToUser )
-        {
-            Log.e("GrFrg","resume");
-            this.setHasOptionsMenu(true); //옆프래그먼트로 넘겼을떄 해제를 위해.
-            initData();        //서버연결.
-            initViews();
-
-            _rxBus = RxBus.getInstance();
-            _subscriptions = new CompositeSubscription();
-            if (_rxBus.hasObservers()) {
-                GroupList g = new GroupList();
-                for (int i = 0; i < mGroupList.size(); i++) {
-                    g.getGroupList().add(mGroupList.get(i).name);
-                }
-                _rxBus.send(g);
+        _rxBus = RxBus.getInstance();
+        _subscriptions = new CompositeSubscription();
+        if (_rxBus.hasObservers()) {
+            GroupList g = new GroupList();
+            for (int i = 0; i < mGroupList.size(); i++) {
+                g.getGroupList().add(mGroupList.get(i).name);
             }
-
-            ConnectableObservable<Object> tapEventEmitter = _rxBus.toObserverable().publish();
-
-            _subscriptions//
-                    .add(tapEventEmitter.subscribe(new Action1<Object>() {
-                        @Override
-                        public void call(Object event) {
-                            if (event instanceof GroupAddActivity.AddGroup) {
-                                mBaseExpandableAdapter.collapseAllParents();
-                                if (mGroupList.size() == 0) {
-                                    mGroupList.add(((GroupAddActivity.AddGroup) event).getAddItem());
-                                    mBaseExpandableAdapter.notifyDataSetChanged();
-                                } else {
-                                    mBaseExpandableAdapter.addItem(((GroupAddActivity.AddGroup) event).getAddItem());
-                                }
-                                if (_rxBus.hasObservers()) {
-                                    GroupList g = new GroupList();
-                                    for (int i = 0; i < mGroupList.size(); i++) {
-                                        g.getGroupList().add(mGroupList.get(i).name);
-                                    }
-                                    _rxBus.send(g);
-                                    Log.e("send", "send");
-                                }
-                            } else if (event instanceof GroupItem.RemoveGroup) {
-                                mBaseExpandableAdapter.collapseAllParents();
-                                mBaseExpandableAdapter.removedItem(((GroupItem.RemoveGroup) event).getItemIndex());
-                                if (_rxBus.hasObservers()) {
-                                    GroupList g = new GroupList();
-                                    for (int i = 0; i < mGroupList.size(); i++) {
-                                        g.getGroupList().add(mGroupList.get(i).name);
-                                    }
-                                    _rxBus.send(g);
-                                    Log.e("send", "send");
-                                }
-                            } else if (event instanceof ContactFragment.AddContactToGroup) {
-                                ArrayList<Contact> contacts = ((ContactFragment.AddContactToGroup) event).getContacts();
-                                ArrayList<Integer> indexList = ((ContactFragment.AddContactToGroup) event).getGroups();
-
-                                Log.e("ff", contacts.size() + ":" + indexList.size());
-                                for (int i = 0; i < indexList.size(); i++) {
-                                    mBaseExpandableAdapter.collapseAllParents();
-                                    mGroupList.get(indexList.get(i)).addChildItem(contacts);
-                                }
-                                mBaseExpandableAdapter.notifyDataSetChanged();
-                            }
-                        }
-                    }));
-            _subscriptions.add(tapEventEmitter.connect());
+            _rxBus.send(g);
+            Log.e("send", "send");
         }
+
+        ConnectableObservable<Object> tapEventEmitter = _rxBus.toObserverable().publish();
+
+        _subscriptions//
+                .add(tapEventEmitter.subscribe(new Action1<Object>() {
+                    @Override
+                    public void call(Object event) {
+                        if (event instanceof GroupAddActivity.AddGroup) {
+                            mBaseExpandableAdapter.collapseAllParents();
+                            if (mGroupList.size() == 0) {
+                                mGroupList.add(((GroupAddActivity.AddGroup) event).getAddItem());
+                                mBaseExpandableAdapter.notifyDataSetChanged();
+                            } else {
+                                mBaseExpandableAdapter.addItem(((GroupAddActivity.AddGroup) event).getAddItem());
+                            }
+                            if (_rxBus.hasObservers()) {
+                                GroupList g = new GroupList();
+                                for (int i = 0; i < mGroupList.size(); i++) {
+                                    g.getGroupList().add(mGroupList.get(i).name);
+                                }
+                                _rxBus.send(g);
+                                Log.e("send", "send");
+                            }
+                        } else if (event instanceof GroupItem.RemoveGroup) {
+                            mBaseExpandableAdapter.collapseAllParents();
+                            mBaseExpandableAdapter.removedItem(((GroupItem.RemoveGroup) event).getItemIndex());
+                            if (_rxBus.hasObservers()) {
+                                GroupList g = new GroupList();
+                                for (int i = 0; i < mGroupList.size(); i++) {
+                                    g.getGroupList().add(mGroupList.get(i).name);
+                                }
+                                _rxBus.send(g);
+                                Log.e("send", "send");
+                            }
+                        } else if (event instanceof ContactFragment.AddContactToGroup) {
+                            ArrayList<Contact> contacts = ((ContactFragment.AddContactToGroup) event).getContacts();
+                            ArrayList<Integer> indexList = ((ContactFragment.AddContactToGroup) event).getGroups();
+
+                            Log.e("ff", contacts.size() + ":" + indexList.size());
+                            for (int i = 0; i < indexList.size(); i++) {
+                                mBaseExpandableAdapter.collapseAllParents();
+                                mGroupList.get(indexList.get(i)).addChildItem(contacts);
+                            }
+                            mBaseExpandableAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }));
+        _subscriptions.add(tapEventEmitter.connect());
     }
 
     @Override
-    public void onDestroyOptionsMenu() {
-        super.onDestroyOptionsMenu();
-        Log.e("GrFrg","onDestroyOptionMenu");
+    public void onDestroy() {
+        super.onDestroy();
         _subscriptions.clear();
+        //구독들 모두 해제
     }
 
     public class GroupList {
