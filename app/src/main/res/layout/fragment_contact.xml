@@ -1,0 +1,57 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp"
+    tools:context=".view.fragment.ContactFragment"
+    android:orientation="vertical"
+    android:background="#ffffff"
+    >
+    <RelativeLayout
+        android:id="@+id/contactFragment_deleteLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <CheckBox
+            android:id="@+id/contactFragment_checkBox_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:text="전체선택"/>
+
+
+        <Button
+            android:id="@+id/contactFragment_button_addGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="35dp"
+            android:text="그룹 추가"
+            android:background="@color/colorAccent"
+            android:textColor="#ffffff"
+            android:layout_toLeftOf="@+id/contactFragment_button_delete"
+            android:layout_marginRight="5dp"/>
+
+        <Button
+            android:id="@+id/contactFragment_button_delete"
+            android:layout_width="50dp"
+            android:layout_height="35dp"
+            android:background="@color/colorAccent"
+            android:layout_gravity="right"
+            android:text="삭제"
+            android:textColor="#ffffff"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true" />
+    </RelativeLayout>
+
+    <!-- TODO: Update blank fragment layout -->
+
+    <android.support.v7.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/contactFragment_recyclerview"
+        />
+</LinearLayout>

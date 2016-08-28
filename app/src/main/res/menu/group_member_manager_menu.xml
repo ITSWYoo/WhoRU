@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_checkAll"
+        android:title="전체 선택"
+        android:checkable="true"
+        app:actionViewClass="android.widget.CheckBox"
+        app:showAsAction="ifRoom|withText"
+        ></item>
+    <item android:id="@+id/action_done"
+        android:title="@string/action_done"
+        android:icon="@drawable/ic_done_white_36dp"
+        app:showAsAction="ifRoom|collapseActionView"/>
+
+</menu>
