@@ -38,4 +38,5 @@ public class RxBus {
     public boolean hasObservers() {
         return _bus.hasObservers();
     }
+
 }

@@ -53,6 +53,10 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
         notifyDataSetChanged();
     }
 
+    public void setItems(List<Contact> items) {
+        this.items = items;
+    }
+
     public void setChecked(boolean checked)
     {
         this.checked = checked;

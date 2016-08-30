@@ -11,7 +11,6 @@ import android.widget.Toast;
 import com.rengwuxian.materialedittext.MaterialEditText;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.model.Group;
-import com.yoo.ymh.whoru.model.GroupItem;
 import com.yoo.ymh.whoru.util.RxBus;
 
 import butterknife.BindView;
@@ -55,10 +54,11 @@ public class GroupAddActivity extends AppCompatActivity {
         _rxBus = RxBus.getInstance();
         ButterKnife.bind(this);
         initViews();
+
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.done,menu);
+        getMenuInflater().inflate(R.menu.back_done_menu,menu);
         return true;
     }
     void initViews(){

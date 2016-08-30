@@ -26,6 +26,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.github.tamir7.contacts.Contact;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import rx.Observable;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, SearchView.OnQueryTextListener {
@@ -54,6 +56,9 @@ public class MainActivity extends AppCompatActivity
     Toolbar mainActivity_toolbar;
     @BindView(R.id.mainActivity_fab)
     FloatingActionButton mainActivity_fab;
+    @BindView(R.id.mainActivity_imageView_card)
+    ImageView mainActivity_imageView_card;
+
     @OnClick(R.id.mainActivity_fab)
     void clickFab(View view) {
         Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
@@ -99,7 +104,6 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -143,6 +147,7 @@ public class MainActivity extends AppCompatActivity
         mainViewPagerAdapter.addFragment(new InfoFragment().newInstance());
         viewPager.setAdapter(mainViewPagerAdapter);
         mainActivity_tabLayout.setupWithViewPager(viewPager);
+//        startActivityForResult();
     }
 
     private PermissionListener permissionlistener = new PermissionListener() {
@@ -170,7 +175,7 @@ public class MainActivity extends AppCompatActivity
         tedPermission
                 .setPermissionListener(permissionlistener)
                 .setDeniedMessage("If you reject permission,you can not use this service\n\nPlease turn on permissions at [Setting] > [Permission]")
-                .setPermissions(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)
+                .setPermissions(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS, Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 .check();
     }
 
@@ -202,6 +207,7 @@ public class MainActivity extends AppCompatActivity
         mainActivity_drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
+
         mainActivity_navigationView.setNavigationItemSelectedListener(this);
         mainActivity_tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -211,6 +217,7 @@ public class MainActivity extends AppCompatActivity
                     case 0:
                         mainActivity_toolbar.setTitle("Contact");
                         mainActivity_fab.setImageResource(R.drawable.ic_person_add_white_48dp);
+                        mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.VISIBLE);
                         mainActivity_fab.setOnClickListener(new View.OnClickListener() {
                             @Override
@@ -221,11 +228,14 @@ public class MainActivity extends AppCompatActivity
                                 startActivity(intent);
                             }
                         });
+                        if(_rxBus.hasObservers())
+                        _rxBus.send(new ViewPageSelectEvent(i));
 
                         return;
                     case 1:
                         mainActivity_toolbar.setTitle("Group");
                         mainActivity_fab.setImageResource(R.drawable.ic_group_add_white_48dp);
+                        mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.VISIBLE);
                         mainActivity_fab.setOnClickListener(new View.OnClickListener() {
                             @Override
@@ -239,10 +249,12 @@ public class MainActivity extends AppCompatActivity
                         return;
                     case 2:
                         mainActivity_toolbar.setTitle("Alarms");
+                        mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.INVISIBLE);
                         return;
                     case 3:
                         mainActivity_toolbar.setTitle("My Infomation");
+                        mainActivity_imageView_card.setVisibility(View.VISIBLE);
                         mainActivity_fab.setVisibility(View.INVISIBLE);
                         return;
                 }
@@ -257,7 +269,19 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
-
     public static class checkedEvent {
+    }
+
+    public class ViewPageSelectEvent {
+        int position;
+
+        public ViewPageSelectEvent(int position) {
+            this.position = position;
+        }
+
+        public int getPosition() {
+            return position;
+        }
+
     }
 }

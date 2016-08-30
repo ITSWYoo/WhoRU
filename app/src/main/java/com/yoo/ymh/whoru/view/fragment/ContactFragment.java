@@ -6,9 +6,11 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,7 +26,6 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.yoo.ymh.whoru.model.Group;
 import com.yoo.ymh.whoru.view.activity.ContactAddActivity;
 import com.yoo.ymh.whoru.view.activity.GroupAddActivity;
 import com.yoo.ymh.whoru.view.activity.MainActivity;
@@ -39,7 +40,6 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import rx.Subscription;
 import rx.functions.Action1;
 import rx.observables.ConnectableObservable;
 import rx.subscriptions.CompositeSubscription;
@@ -48,7 +48,7 @@ import rx.subscriptions.CompositeSubscription;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ContactFragment extends Fragment {
+public class ContactFragment extends Fragment implements SearchView.OnQueryTextListener {
 
     @BindView(R.id.contactFragment_recyclerview)
     RecyclerView contactFragment_recyclerview;
@@ -94,6 +94,7 @@ public class ContactFragment extends Fragment {
                             if (_rxBus.hasObservers()) {
                                 _rxBus.send(addContactToGroup);
                             }
+                            contactFragment_checkBox_all.setChecked(false);
                             checked = false;
                             contactFragment_deleteLayout.setVisibility(View.GONE);
                             contactRecyclerViewAdapter.setChecked(false);
@@ -133,7 +134,11 @@ public class ContactFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.main, menu);
+        inflater.inflate(R.menu.contact_fragment_menu, menu);
+        final MenuItem item = menu.findItem(R.id.action_search);
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(item);
+        searchView.setOnQueryTextListener(this);
+        searchView.setQueryHint("Search Hint");
     }
 
     @Override
@@ -200,7 +205,7 @@ public class ContactFragment extends Fragment {
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_contact, container, false);
         ButterKnife.bind(this, v);
-        setContactFragment_recyclerview();
+        initViews();
         return v;
 
     }
@@ -213,8 +218,6 @@ public class ContactFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        initData();
 
         _rxBus = RxBus.getInstance();
         _subscriptions = new CompositeSubscription();
@@ -234,14 +237,20 @@ public class ContactFragment extends Fragment {
                         } else if (event instanceof GroupFragment.GroupList) {
                             groupList = ((GroupFragment.GroupList) event).getGroupList();
                             Log.e("take", "take");
+                        }else if(event instanceof MainActivity.ViewPageSelectEvent && ((MainActivity.ViewPageSelectEvent) event).getPosition()==0)
+                        {
+                            Log.e("retrofit","retrofit");
+                            //retrofit & initData
                         }
                     }
                 }));
         _subscriptions.add(tapEventEmitter.connect());
         //이 시점부터 Observable이 배출. 위에 Subscribe가 먼저있다.. 고로 구독하고나서부터 배출을 할수밖에없다.->다 잡을수있다.
+        initData();
+
     }
 
-    public void setContactFragment_recyclerview() {
+    public void initViews() {
         checked = false;
         final LinearLayoutManager manager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         contactFragment_recyclerview.setLayoutManager(manager);
@@ -256,15 +265,31 @@ public class ContactFragment extends Fragment {
     }
 
     @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if(isVisibleToUser)
-        {
-            Log.e("contactFragment","resume");
-        }
+    public boolean onQueryTextSubmit(String query) {
+        return false;
     }
 
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        final List<Contact> filteredModelList = filter(contactList,newText);
+        contactRecyclerViewAdapter.setItems(filteredModelList);
+        contactRecyclerViewAdapter.notifyDataSetChanged();
+        contactFragment_recyclerview.scrollToPosition(0);
+        return true;
+    }
 
+    private List<Contact> filter(List<Contact> datas, String newText) {
+        newText = newText.toLowerCase();
+
+        final List<Contact> filteredModelList = new ArrayList<>();
+        for (Contact data : datas) {
+            final String text = data.getName().toLowerCase();
+            if (text.contains(newText)) {
+                filteredModelList.add(data);
+            }
+        }
+        return filteredModelList;
+    }
 
     public class AddContactToGroup {
         ArrayList<Contact> contacts;

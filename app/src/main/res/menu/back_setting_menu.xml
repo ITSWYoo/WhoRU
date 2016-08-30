@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <group android:id="@+id/action_setting"
+        android:title="@string/action_settings"
+        android:icon="@drawable/ic_more_vert_white_48dp"
+        app:showAsAction="ifRoom|collapseActionView" >
+        <item name="android:"
+            android:id ="@+id/action_add_localContact"
+            android:title="휴대폰 연락처에 추가"
+
+            >
+        </item>
+        <item
+            android:id ="@+id/action_delete_card"
+            android:title="명함 삭제"
+            >
+        </item>
+    </group>
+</menu>

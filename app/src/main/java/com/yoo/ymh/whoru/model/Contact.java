@@ -17,7 +17,6 @@ public class Contact implements Parcelable {
     private String address;
     private String name;
     private String company;
-    private List<Contact> myContactList;
     private boolean selected;
     public Contact()
     {}
@@ -30,7 +29,6 @@ public class Contact implements Parcelable {
         address = in.readString();
         name = in.readString();
         company = in.readString();
-        myContactList = in.createTypedArrayList(Contact.CREATOR);
     }
 
     public static final Creator<Contact> CREATOR = new Creator<Contact>() {
@@ -70,13 +68,6 @@ public class Contact implements Parcelable {
     }
 
 
-    public List<Contact> getMyContactList() {
-        return myContactList;
-    }
-
-    public void setMyContactList(List<Contact> myContactList) {
-        this.myContactList = myContactList;
-    }
 
     public String getId() {
         return id;
@@ -141,6 +132,7 @@ public class Contact implements Parcelable {
         parcel.writeString(address);
         parcel.writeString(name);
         parcel.writeString(company);
-        parcel.writeTypedList(myContactList);
     }
+
+
 }

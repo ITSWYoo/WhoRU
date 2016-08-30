@@ -1,17 +1,13 @@
 package com.yoo.ymh.whoru.view.activity;
 
-import android.graphics.Color;
-import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,7 +20,6 @@ import com.yoo.ymh.whoru.util.RxBus;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class ContactAddActivity extends AppCompatActivity {
 
@@ -46,7 +41,7 @@ public class ContactAddActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.done,menu);
+        getMenuInflater().inflate(R.menu.back_done_menu,menu);
         return true;
     }
 

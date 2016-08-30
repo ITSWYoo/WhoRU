@@ -64,82 +64,11 @@ public class GroupFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View v = inflater.inflate(R.layout.fragment_group, container, false);
-        ButterKnife.bind(this, v);
-        initViews();
-        return v;
-    }
-
-    public void initViews() {
-        mBaseExpandableAdapter = new BaseExpandableAdapter(mGroupList) {
-            @NonNull
-            @Override
-            public AbstractAdapterItem<Object> getItemView(Object type) {
-                int itemType = (int) type;
-                switch (itemType) {
-                    case ITEM_TYPE_GROUP:
-                        return new GroupItem();
-                    case ITEM_TYPE_CONTACT:
-                        return new GroupMemberItem();
-                }
-                return null;
-            }
-
-            @Override
-            public Object getItemViewType(Object t) {
-                if (t instanceof Group) {
-                    return ITEM_TYPE_GROUP;
-                } else if (t instanceof com.yoo.ymh.whoru.model.Contact)
-                    return ITEM_TYPE_CONTACT;
-                return -1;
-            }
-        };
-        groupFragment_recyclerview.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
-        groupFragment_recyclerview.setAdapter(mBaseExpandableAdapter);
-        Log.e("num", mBaseExpandableAdapter.getItemCount() + "");
-        mBaseExpandableAdapter.setExpandCollapseListener(new BaseExpandableAdapter.ExpandCollapseListener() {
-            @Override
-            public void onListItemExpanded(int position) {
-            }
-
-            @Override
-            public void onListItemCollapsed(int position) {
-            }
-        });
-    }
-
-    private void initData() {
-        mGroupList = new ArrayList<Group>();
-
-//        Group baseGroup = new Group();
-//        baseGroup.name = "기본";
-//        mGroupList.add(baseGroup);
-    }
-
-    @NonNull
-    private Group createGroup(String groupName) {
-        Group firstGroup = new Group();
-        firstGroup.name = groupName;
-        List<Contact> contacts = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
-            Contact contact = new Contact();
-            contact.setName("Asdf");
-            contact.setPhone("1231234");
-            contacts.add(contact);
-        }
-        firstGroup.mGroupMembers = contacts;
-        firstGroup.groupMemberNum = contacts.size();
-        return firstGroup;
-    }
-
-    @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initData();
 
+        Log.e("GrFrg","onCreate");
         _rxBus = RxBus.getInstance();
         _subscriptions = new CompositeSubscription();
         if (_rxBus.hasObservers()) {
@@ -194,6 +123,9 @@ public class GroupFragment extends Fragment {
                                 mGroupList.get(indexList.get(i)).addChildItem(contacts);
                             }
                             mBaseExpandableAdapter.notifyDataSetChanged();
+                        } else if(event instanceof MainActivity.ViewPageSelectEvent && ((MainActivity.ViewPageSelectEvent) event).getPosition()==1)
+                        {
+                            Log.e("retrofit","retrofit");
                         }
                     }
                 }));
@@ -201,9 +133,83 @@ public class GroupFragment extends Fragment {
     }
 
     @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View v = inflater.inflate(R.layout.fragment_group, container, false);
+        ButterKnife.bind(this, v);
+        initViews();
+        return v;
+    }
+
+    public void initViews() {
+        mBaseExpandableAdapter = new BaseExpandableAdapter(mGroupList) {
+            @NonNull
+            @Override
+            public AbstractAdapterItem<Object> getItemView(Object type) {
+                int itemType = (int) type;
+                switch (itemType) {
+                    case ITEM_TYPE_GROUP:
+                        return new GroupItem();
+                    case ITEM_TYPE_CONTACT:
+                        return new GroupMemberItem();
+                }
+                return null;
+            }
+
+            @Override
+            public Object getItemViewType(Object t) {
+                if (t instanceof Group) {
+                    return ITEM_TYPE_GROUP;
+                } else if (t instanceof com.yoo.ymh.whoru.model.Contact)
+                    return ITEM_TYPE_CONTACT;
+                return -1;
+            }
+        };
+        groupFragment_recyclerview.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
+        groupFragment_recyclerview.setAdapter(mBaseExpandableAdapter);
+        Log.e("num", mBaseExpandableAdapter.getItemCount() + "");
+        mBaseExpandableAdapter.setExpandCollapseListener(new BaseExpandableAdapter.ExpandCollapseListener() {
+            @Override
+            public void onListItemExpanded(int position) {
+            }
+
+            @Override
+            public void onListItemCollapsed(int position) {
+            }
+        });
+        Log.e("GrFrg","onCreateView");
+    }
+
+    private void initData() {
+        mGroupList = new ArrayList<Group>();
+
+//        Group baseGroup = new Group();
+//        baseGroup.name = "기본";
+//        mGroupList.add(baseGroup);
+    }
+
+    @NonNull
+    private Group createGroup(String groupName) {
+        Group firstGroup = new Group();
+        firstGroup.name = groupName;
+        List<Contact> contacts = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            Contact contact = new Contact();
+            contact.setName("Asdf");
+            contact.setPhone("1231234");
+            contacts.add(contact);
+        }
+        firstGroup.mGroupMembers = contacts;
+        firstGroup.groupMemberNum = contacts.size();
+        return firstGroup;
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         _subscriptions.clear();
+        Log.e("GrFrg","onDestroy");
         //구독들 모두 해제
     }
 
