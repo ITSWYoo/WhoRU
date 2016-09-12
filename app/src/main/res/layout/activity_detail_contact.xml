@@ -2,21 +2,18 @@
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/detailContactActivity_coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     tools:context=".view.activity.DetailContactActivity">
 
     <android.support.design.widget.AppBarLayout
-        android:id="@+id/detailContactActivity_appbarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fitsSystemWindows="true"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
         <android.support.design.widget.CollapsingToolbarLayout
-            android:id="@+id/detailContactActivity_collapsingToolbarLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fitsSystemWindows="true"
@@ -24,12 +21,30 @@
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             app:titleEnabled="false">
 
-            <ImageView
-                android:id="@+id/detailContactActivity_imageView_card"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/header" />
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/detailContactActivity_imageView_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:background="@color/colorAccent"
+                    android:scaleType="centerCrop" />
+
+                <TextView
+                    android:id="@+id/detailContactActivity_textView_card_default"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBottom="@id/detailContactActivity_imageView_card"
+                    android:layout_alignLeft="@id/detailContactActivity_imageView_card"
+                    android:layout_alignRight="@id/detailContactActivity_imageView_card"
+                    android:layout_alignTop="@id/detailContactActivity_imageView_card"
+                    android:gravity="center"
+                    android:text="명함을 등록해주세요"
+                    android:textColor="#ffffff" />
+            </RelativeLayout>
+
 
             <android.support.v7.widget.Toolbar
                 android:id="@+id/detailContactActivity_toolbar"
@@ -56,6 +71,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -64,7 +80,7 @@
                     android:layout_marginTop="10dp"
                     android:background="@drawable/shape_top"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -79,18 +95,10 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <ImageView
-                            android:id="@+id/detailContactActivity_imageView_basic_setting"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="right"
-                            android:layout_marginRight="10dp"
-                            android:src="@drawable/ic_more_vert_white_48dp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/detailContactActivity_layout_basic_info"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
@@ -101,13 +109,14 @@
 
                     <de.hdodenhof.circleimageview.CircleImageView
                         android:id="@+id/detailContactActivity_circleImageView_profile"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="10dp"
                         android:src="@drawable/ic_regit_user" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:orientation="vertical">
 
                         <TextView
@@ -115,10 +124,32 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginLeft="10dp"
+                            android:layout_weight="1"
+                            android:text="이름"
+                            android:textSize="18sp"
+                            android:layout_marginTop="15dp" />
+
+                        <TextView
+                            android:id="@+id/detailContactActivity_textView_responsibility"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginLeft="10dp"
                             android:layout_marginTop="5dp"
                             android:layout_weight="1"
-                            android:text="asdfasf"
-                            android:textSize="20sp" />
+                            android:text="직책"
+                            android:textSize="15sp"
+                            android:visibility="gone"/>
+
+                        <TextView
+                            android:id="@+id/detailContactActivity_textView_department"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginLeft="10dp"
+                            android:layout_marginTop="5dp"
+                            android:layout_weight="1"
+                            android:text="부서"
+                            android:textSize="15sp"
+                            android:visibility="gone"/>
 
                         <TextView
                             android:id="@+id/detailContactActivity_textView_company"
@@ -127,19 +158,20 @@
                             android:layout_marginLeft="10dp"
                             android:layout_marginTop="5dp"
                             android:layout_weight="1"
-                            android:text="New Text"
-                            android:textSize="15sp" />
+                            android:text="회사"
+                            android:textSize="15sp"
+                            android:visibility="gone"/>
                     </LinearLayout>
                 </LinearLayout>
+
                 <LinearLayout
-                    android:id="@+id/detailContactActivity_layout_memo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
                     android:layout_marginRight="5dp"
-                    android:background="@drawable/shape_bottom"
+                    android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp">
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -150,16 +182,41 @@
                     <TextView
                         android:id="@+id/detailContactActivity_textView_memo"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginLeft="10dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="15dp"
                         android:layout_marginTop="3dp"
-                        android:text="메모를 입력해주세요" />
+                        android:text="메모를 입력해주세요"
+                        android:textSize="15sp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:background="@drawable/shape_no_corners"
+                    android:orientation="horizontal"
+                    android:padding="10dp">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:background="@drawable/ic_people_black_24dp" />
+
+                    <TextView
+                        android:id="@+id/detailContactActivity_textView_group"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="15dp"
+                        android:layout_marginTop="3dp"
+                        android:text="그룹"
+                        android:textSize="15sp"/>
                 </LinearLayout>
             </LinearLayout>
 
 
             <LinearLayout
-                android:id="@+id/detailContactActivity_layout_contact"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
@@ -172,7 +229,7 @@
                     android:layout_marginTop="5dp"
                     android:background="@drawable/shape_top"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -187,37 +244,31 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <ImageView
-                            android:id="@+id/detailContactActivity_imageView_contact_setting"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="right"
-                            android:layout_marginRight="10dp"
-                            android:src="@drawable/ic_more_vert_white_48dp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/detailContactActivity_layout_phoneNumber"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp">
 
                     <ImageView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="5dp"
-                        android:src="@drawable/cell_phone" />
+                        android:src="@drawable/cell_phone"
+                        />
 
                     <TextView
                         android:id="@+id/detailContactActivity_textView_phoneNumber"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
 
                 </LinearLayout>
 
@@ -229,7 +280,8 @@
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -241,7 +293,8 @@
                         android:id="@+id/detailContactActivity_textView_companyNumber"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
 
                 </LinearLayout>
 
@@ -253,7 +306,8 @@
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -265,7 +319,8 @@
                         android:id="@+id/detailContactActivity_textView_faxNumber"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -276,7 +331,8 @@
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -288,7 +344,8 @@
                         android:id="@+id/detailContactActivity_textView_email"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
 
                 </LinearLayout>
 
@@ -298,9 +355,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
                     android:layout_marginRight="5dp"
-                    android:background="@drawable/shape_bottom"
+                    android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -308,12 +366,28 @@
                         android:layout_marginLeft="5dp"
                         android:src="@drawable/ic_pin_drop_black_24dp" />
 
-                    <TextView
-                        android:id="@+id/detailContactActivity_textView_companyAddress"
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:orientation="vertical">
 
+                        <TextView
+                            android:id="@+id/detailContactActivity_textView_companyAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="25dp"
+                            android:layout_marginLeft="10dp"/>
+
+                        <com.google.android.gms.maps.MapView
+                            android:id="@+id/detailContactActivity_mapView"
+                            android:layout_width="match_parent"
+                            android:layout_height="150dp"
+                            android:layout_marginTop="10dp"
+                            android:visibility="gone"
+                            app:cameraZoom="15"
+                            app:liteMode="true"
+                            app:mapType="normal"></com.google.android.gms.maps.MapView>
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
 
@@ -321,7 +395,9 @@
                 android:id="@+id/detailContactActivity_layout_sns"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_marginBottom="10dp"
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -331,7 +407,7 @@
                     android:layout_marginTop="5dp"
                     android:background="@drawable/shape_top"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -346,13 +422,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <ImageView
-                            android:id="@+id/detailContactActivity_imageview_sns_setting"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="right"
-                            android:layout_marginRight="10dp"
-                            android:src="@drawable/ic_more_vert_white_48dp" />
+
                     </LinearLayout>
                 </LinearLayout>
 
@@ -364,19 +434,22 @@
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginLeft="5dp"
-                        android:src="@drawable/facebook" />
+                        android:src="@drawable/facebook"
+                        />
 
                     <TextView
                         android:id="@+id/detailContactActivity_textView_facebook"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
 
                 </LinearLayout>
 
@@ -388,7 +461,8 @@
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -400,7 +474,8 @@
                         android:id="@+id/detailContactActivity_textView_google"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
 
                 </LinearLayout>
 
@@ -412,43 +487,22 @@
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginLeft="5dp"
-                        android:src="@drawable/linkedin" />
+                        android:src="@drawable/linkedin"
+                        />
 
                     <TextView
                         android:id="@+id/detailContactActivity_textView_linkedIn"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/detailContactActivity_layout_twitter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginRight="5dp"
-                    android:background="@drawable/shape_no_corners"
-                    android:orientation="horizontal"
-                    android:padding="5dp">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginLeft="5dp"
-                        android:src="@drawable/twitter" />
-
-                    <TextView
-                        android:id="@+id/detailContactActivity_textView_twitter"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
-
+                        android:textSize="15sp"
+                        android:layout_marginLeft="15dp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -459,7 +513,8 @@
                     android:layout_marginRight="5dp"
                     android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -471,7 +526,8 @@
                         android:id="@+id/detailContactActivity_textView_instagram"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
 
                 </LinearLayout>
 
@@ -481,9 +537,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
                     android:layout_marginRight="5dp"
-                    android:background="@drawable/shape_bottom"
+                    android:background="@drawable/shape_no_corners"
                     android:orientation="horizontal"
-                    android:padding="5dp">
+                    android:padding="10dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -495,20 +552,20 @@
                         android:id="@+id/detailContactActivity_textView_anotherSns"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginLeft="5dp" />
+                        android:layout_marginLeft="15dp"
+                        android:textSize="15sp"/>
 
                 </LinearLayout>
             </LinearLayout>
+
+            <Button
+                android:id="@+id/detailContactActivity_button_delete"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:background="#e24a4a"
+                android:text="삭제하기"
+                android:textColor="#ffffff" />
         </LinearLayout>
-
-
     </android.support.v4.widget.NestedScrollView>
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/detailContactActivity_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_person_add_white_48dp" />
 </android.support.design.widget.CoordinatorLayout>

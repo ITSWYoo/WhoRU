@@ -1,22 +1,13 @@
 package com.yoo.ymh.whoru.view.activity;
-
+import com.facebook.FacebookSdk;
 import android.Manifest;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 
-import android.support.v7.view.menu.ActionMenuItem;
-import android.support.v7.view.menu.MenuBuilder;
-
-import android.support.v7.widget.SearchView;
-
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -27,14 +18,19 @@ import android.support.v7.widget.Toolbar;
 
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.appevents.AppEventsLogger;
 import com.github.tamir7.contacts.Contact;
 import com.github.tamir7.contacts.Contacts;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
 import com.yoo.ymh.whoru.adapter.MainViewPagerAdapter;
 import com.yoo.ymh.whoru.R;
+import com.yoo.ymh.whoru.model.AppContact;
+import com.yoo.ymh.whoru.model.AppContactList;
+import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
 import com.yoo.ymh.whoru.util.RxBus;
 import com.yoo.ymh.whoru.view.fragment.AlarmFragment;
 import com.yoo.ymh.whoru.view.fragment.ContactFragment;
@@ -42,29 +38,23 @@ import com.yoo.ymh.whoru.view.fragment.GroupFragment;
 import com.yoo.ymh.whoru.view.fragment.InfoFragment;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
-import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.observables.ConnectableObservable;
+import rx.schedulers.Schedulers;
+import rx.subscriptions.CompositeSubscription;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, SearchView.OnQueryTextListener {
-    private RxBus _rxBus = null;
-
+        implements NavigationView.OnNavigationItemSelectedListener {
     @BindView(R.id.mainActivity_toolbar)
     Toolbar mainActivity_toolbar;
     @BindView(R.id.mainActivity_fab)
     FloatingActionButton mainActivity_fab;
     @BindView(R.id.mainActivity_imageView_card)
     ImageView mainActivity_imageView_card;
-
-    @OnClick(R.id.mainActivity_fab)
-    void clickFab(View view) {
-        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
-    }
-
     @BindView(R.id.mainActivity_drawer_layout)
     DrawerLayout mainActivity_drawerLayout;
     @BindView(R.id.mainActivity_navigationView)
@@ -73,25 +63,25 @@ public class MainActivity extends AppCompatActivity
     TabLayout mainActivity_tabLayout;
     @BindView(R.id.mainActivity_viewpager)
     ViewPager mainActivity_viewPager;
-
+    @BindView(R.id.mainActivity_textView_card_default)
+    TextView detailContactActivity_textView_card_default;
+    private RxBus _rxBus;
+    private CompositeSubscription compositeSubscription;
     private MainViewPagerAdapter mainViewPagerAdapter;
+    private List<com.github.tamir7.contacts.Contact> myLocalContactList;
+    private List<AppContact> appContactList;
+    private List<AppContact> appContactsfromContactFragment;
 
-    private ArrayList<com.github.tamir7.contacts.Contact> contacts;
-
-    private ArrayList<com.yoo.ymh.whoru.model.Contact> contactList;
+    private int tabImge[] = {R.drawable.ic_contacts_black_48dp, R.drawable.ic_group_black_48dp, R.drawable.ic_notifications_black_48dp, R.drawable.ic_face_black_48dp};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        _rxBus = RxBus.getInstance();
-
-        getPermission();
-
         ButterKnife.bind(this);
-
-        initView();
+        getPermission();
+        rxBusEvent();
+        initViews();
     }
 
     @Override
@@ -102,7 +92,6 @@ public class MainActivity extends AppCompatActivity
             super.onBackPressed();
         }
     }
-
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -121,54 +110,31 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_share) {
 
         } else if (id == R.id.nav_send) {
-
+            getMyLocalContactList();
+            if (appContactList.size() == 0 || appContactList.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "이미 연락처가 동기화 되어있습니다.", Toast.LENGTH_SHORT).show();
+            } else {
+                AppContactList localAppContactList = new AppContactList();
+                localAppContactList.getData().addAll(appContactList);
+                WhoRURetrofit.getWhoRURetorfitInstance().sendLocalcontactList("abcd", localAppContactList)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(integer -> _rxBus.send(new LocalContactToContactFragment()));
+            }
         }
-
         mainActivity_drawerLayout.closeDrawer(GravityCompat.START);
         return true;
     }
 
-    @Override
-    public boolean onQueryTextSubmit(String query) {
-        Toast.makeText(this, query, Toast.LENGTH_SHORT).show();
-        return true;
-    }
-
-    @Override
-    public boolean onQueryTextChange(String newText) {
-        return false;
-    }
-
     private void setupViewPager(ViewPager viewPager) {
         mainViewPagerAdapter = new MainViewPagerAdapter(getSupportFragmentManager(), this);
-        mainViewPagerAdapter.addFragment(new ContactFragment().newInstance(contactList));
+        mainViewPagerAdapter.addFragment(new ContactFragment().newInstance());
         mainViewPagerAdapter.addFragment(new GroupFragment().newInstance());
         mainViewPagerAdapter.addFragment(new AlarmFragment().newInstance());
         mainViewPagerAdapter.addFragment(new InfoFragment().newInstance());
         viewPager.setAdapter(mainViewPagerAdapter);
         mainActivity_tabLayout.setupWithViewPager(viewPager);
-//        startActivityForResult();
     }
-
-    private PermissionListener permissionlistener = new PermissionListener() {
-        @Override
-        public void onPermissionGranted() {
-            Toast.makeText(MainActivity.this, "Permission Granted", Toast.LENGTH_SHORT).show();
-            getContactList();
-            int tabImge[] = {R.drawable.ic_contacts_black_48dp, R.drawable.ic_group_black_48dp, R.drawable.ic_notifications_black_48dp, R.drawable.ic_face_black_48dp};
-            if (mainActivity_viewPager != null) {
-                setupViewPager(mainActivity_viewPager);
-            }
-            for (int i = 0; i < tabImge.length; i++) {
-                mainActivity_tabLayout.getTabAt(i).setIcon(tabImge[i]);
-            }
-        }
-
-        @Override
-        public void onPermissionDenied(ArrayList<String> deniedPermissions) {
-            Toast.makeText(MainActivity.this, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
-        }
-    };
 
     public void getPermission() {
         TedPermission tedPermission = new TedPermission(getApplicationContext());
@@ -179,36 +145,97 @@ public class MainActivity extends AppCompatActivity
                 .check();
     }
 
-    public void getContactList() {
-        Contacts.initialize(MainActivity.this);
-        contacts = (ArrayList<Contact>) Contacts.getQuery().find();
-        contactList = new ArrayList<>();
-        com.yoo.ymh.whoru.model.Contact item;
+    private PermissionListener permissionlistener = new PermissionListener() {
+        @Override
+        public void onPermissionGranted() {
+            if (mainActivity_viewPager != null) {
+                mainActivity_viewPager.setOffscreenPageLimit(3);
+                setupViewPager(mainActivity_viewPager);
+                for (int i = 0; i < tabImge.length; i++) {
+                    mainActivity_tabLayout.getTabAt(i).setIcon(tabImge[i]);
+                }
+            }
+        }
 
-        for (int i = 0; i < contacts.size(); i++) {
-            item = new com.yoo.ymh.whoru.model.Contact();
-            if (contacts.get(i).getBestPhoneNumber() != null) {
-                item.setName(contacts.get(i).getBestDisplayName());
-                item.setPhone(contacts.get(i).getBestPhoneNumber().getNormalizedNumber());
-                contactList.add(item);
+        @Override
+        public void onPermissionDenied(ArrayList<String> deniedPermissions) {
+            Toast.makeText(MainActivity.this, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    public void getMyLocalContactList() {
+        Contacts.initialize(MainActivity.this);
+        myLocalContactList = (ArrayList<Contact>) Contacts.getQuery().find();
+        appContactList = new ArrayList<>();
+        AppContact item;
+
+        //휴대폰 연락처 앱 연락처로가져오기
+        for (Contact c : myLocalContactList) {
+            item = new AppContact();
+            if (c.getBestPhoneNumber() != null) {
+                item.setName((c.getBestDisplayName()));
+                String phoneNumber = c.getBestPhoneNumber().getNormalizedNumber();
+                String phone_number = null;
+                if (phoneNumber.startsWith("+82")) {
+                    if (phoneNumber.length() == 14) phoneNumber = phoneNumber.replace("+82", "");
+                    else phoneNumber = phoneNumber.replace("+82", "0");
+
+                }
+                if (phoneNumber.startsWith("+082")) {
+                    if (phoneNumber.length() == 15) phoneNumber = phoneNumber.replace("+082", "");
+                    else phoneNumber = phoneNumber.replace("+082", "0");
+                }
+
+                if (phoneNumber.length() == 11) {
+                    phone_number = String.format("%s-%s-%s", phoneNumber.substring(0, 3), phoneNumber.substring(3, 7), phoneNumber.substring(7, 11));
+                }
+                if (phoneNumber.length() == 10) {
+                    phone_number = String.format("%s-%s-%s", phoneNumber.substring(0, 3), phoneNumber.substring(3, 6), phoneNumber.substring(6, 10));
+                }
+                if (phoneNumber.length() == 9) {
+                    phone_number = String.format("%s-%s-%s", phoneNumber.substring(0, 2), phoneNumber.substring(2, 5), phoneNumber.substring(5, 9));
+                }
+                if (phone_number != null && phone_number.length() > 0) item.setPhone(phone_number);
+                else item.setPhone(phoneNumber);
+                appContactList.add(item);
+            }
+        }
+
+        //가져온 연락처랑 기존에 등록된 연락처 비교
+        if (appContactsfromContactFragment != null && !appContactsfromContactFragment.isEmpty() && appContactsfromContactFragment.size() != 0) {
+            for (int i = appContactList.size() - 1; i >= 0; i--) {
+                for (int j = 0; j < appContactsfromContactFragment.size(); j++) {
+                    if (appContactList.get(i).getPhone().equals(appContactsfromContactFragment.get(j).getPhone())) {
+                        appContactList.remove(i);
+                        break;
+                    }
+                }
             }
         }
     }
 
-    private void initView() {
+    private void initViews() {
+        setToolbar();
+        setNavigation();
+        setTablayout();
+    }
+
+    private void setToolbar() {
         mainActivity_toolbar.setTitle("Contact");
         setSupportActionBar(mainActivity_toolbar);
+    }
 
+    private void setNavigation() {
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mainActivity_drawerLayout, mainActivity_toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
-
         };
-
         mainActivity_drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
-
-
         mainActivity_navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    private void setTablayout() {
+
         mainActivity_tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
@@ -219,44 +246,38 @@ public class MainActivity extends AppCompatActivity
                         mainActivity_fab.setImageResource(R.drawable.ic_person_add_white_48dp);
                         mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.VISIBLE);
-                        mainActivity_fab.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-
-                                Toast.makeText(getApplicationContext(), "contact", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(MainActivity.this, ContactAddActivity.class);
-                                startActivity(intent);
-                            }
+                        mainActivity_fab.setOnClickListener(view -> {
+                            Intent intent = new Intent(MainActivity.this, AddContactActivity.class);
+                            intent.putParcelableArrayListExtra("myContactList", (ArrayList<? extends Parcelable>) appContactsfromContactFragment);
+                            startActivity(intent);
                         });
-                        if(_rxBus.hasObservers())
-                        _rxBus.send(new ViewPageSelectEvent(i));
 
-                        return;
+                        detailContactActivity_textView_card_default.setVisibility(View.INVISIBLE);
+                        break;
                     case 1:
                         mainActivity_toolbar.setTitle("Group");
                         mainActivity_fab.setImageResource(R.drawable.ic_group_add_white_48dp);
                         mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.VISIBLE);
-                        mainActivity_fab.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                Toast.makeText(getApplicationContext(), "Group", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(MainActivity.this, GroupAddActivity.class);
-                                startActivity(intent);
-                            }
+                        mainActivity_fab.setOnClickListener(view -> {
+                            Intent intent = new Intent(MainActivity.this, AddGroupActivity.class);
+                            startActivity(intent);
                         });
 
-                        return;
+                        detailContactActivity_textView_card_default.setVisibility(View.INVISIBLE);
+                        break;
                     case 2:
                         mainActivity_toolbar.setTitle("Alarms");
                         mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.INVISIBLE);
-                        return;
+                        detailContactActivity_textView_card_default.setVisibility(View.INVISIBLE);
+                        break;
                     case 3:
                         mainActivity_toolbar.setTitle("My Infomation");
                         mainActivity_imageView_card.setVisibility(View.VISIBLE);
                         mainActivity_fab.setVisibility(View.INVISIBLE);
-                        return;
+                        detailContactActivity_textView_card_default.setVisibility(View.VISIBLE);
+                        break;
                 }
             }
 
@@ -269,19 +290,32 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
-    public static class checkedEvent {
+
+    public void rxBusEvent() {
+        _rxBus = RxBus.getInstance();
+        compositeSubscription = new CompositeSubscription();
+        ConnectableObservable<Object> mainActivityEmitter = _rxBus.toObserverable().publish();
+
+        //publish는 보통 Observable을 ConnectableObservable로 변환
+        //구독 여부와 상관없다. Connect라는 메서드가 불려야만 항목들을 배출하는 Observable.
+
+        compositeSubscription//
+                .add(mainActivityEmitter.subscribe(o -> {
+                    if (o instanceof ContactFragment.AppContactToMain) {
+                        appContactsfromContactFragment = new ArrayList<>();
+                        appContactsfromContactFragment = ((ContactFragment.AppContactToMain) o).getAppContacts();
+                    }
+                }));
+        compositeSubscription.add(mainActivityEmitter.connect());
+        //이 시점부터 Observable이 배출. 위에 Subscribe가 먼저있다.. 고로 구독하고나서부터 배출을 할수밖에없다.->다 잡을수있다.
     }
 
-    public class ViewPageSelectEvent {
-        int position;
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        compositeSubscription.clear();
+    }
 
-        public ViewPageSelectEvent(int position) {
-            this.position = position;
-        }
-
-        public int getPosition() {
-            return position;
-        }
-
+    public class LocalContactToContactFragment {
     }
 }

@@ -28,8 +28,7 @@
                 android:title="Share" />
             <item
                 android:id="@+id/nav_send"
-                android:icon="@drawable/ic_menu_send"
-                android:title="Send" />
+                android:title="휴대폰 연락처가져오기/내보내기" />
         </menu>
     </item>
 

@@ -1,11 +1,6 @@
 package com.yoo.ymh.whoru.util;
 
-import com.yoo.ymh.whoru.model.Contact;
-
 import rx.Observable;
-import rx.Observer;
-import rx.Subscriber;
-import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 import rx.subjects.SerializedSubject;
 import rx.subjects.Subject;
@@ -19,14 +14,15 @@ public class RxBus {
 
     // If multiple threads are going to emit events to this
     // then it must be made thread-safe like this instead
-    private static final RxBus INSTANCE =new RxBus();
+    private static final RxBus INSTANCE = new RxBus();
 
     private final Subject<Object, Object> _bus = new SerializedSubject<>(PublishSubject.create());//publishSubject는 구독 후 모든 item Subscribe가능
 
-    public static RxBus getInstance(){
+    public static RxBus getInstance() {
 
         return INSTANCE;
     }
+
     public void send(Object o) {
         _bus.onNext(o);
     }
@@ -36,7 +32,8 @@ public class RxBus {
     }
 
     public boolean hasObservers() {
-        return _bus.hasObservers();
-    }
 
+        return _bus.hasObservers();
+
+    }
 }

@@ -14,7 +14,7 @@
         app:showAsAction="ifRoom|collapseActionView"
         app:actionViewClass="android.support.v7.widget.SearchView" />
 
-    <item android:id="@+id/action_delete"
+    <item android:id="@+id/action_manage"
         android:checkable="true"
         android:title="관리"
         app:showAsAction="ifRoom|collapseActionView">

@@ -2,8 +2,8 @@ package com.yoo.ymh.whoru.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,9 +11,10 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.yoo.ymh.whoru.model.AppContact;
 import com.yoo.ymh.whoru.view.activity.DetailContactActivity;
 import com.yoo.ymh.whoru.R;
-import com.yoo.ymh.whoru.model.Contact;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,78 +29,74 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecyclerViewAdapter.ViewHolder> {
 
     private Context mContext;
-    private List<Contact> items;
+    private List<AppContact> items;
     private boolean checked;
-    private boolean[] isCheckedConfirm;
+
+    public List<AppContact> getItems() {
+        return items;
+    }
 
     //초기화
-    public ContactRecyclerViewAdapter(Context mContext, List<Contact> items,boolean checeked) {
+    public ContactRecyclerViewAdapter(Context mContext, List<AppContact> items, boolean checeked) {
         this.mContext = mContext;
         this.items = items;
         this.checked = checeked;
-        this.isCheckedConfirm = new boolean[items.size()];
     }
 
     //add item
-    public void addItem(Contact item) {
+    public void addItem(AppContact item) {
         items.add(item);
         int size = items.size();
-        notifyItemInserted(size-1);
-
+        notifyItemInserted(size - 1);
     }
 
-    public void addAllItem(List<Contact> items) {
+    public void addAllItem(List<AppContact> items) {
         this.items.addAll(items);
         notifyDataSetChanged();
     }
 
-    public void setItems(List<Contact> items) {
-        this.items = items;
+    public void clear() {
+        this.items.clear();
+        notifyDataSetChanged();
     }
 
-    public void setChecked(boolean checked)
-    {
+    public void setItems(List<AppContact> items) {
+        this.items = items;
+        notifyDataSetChanged();
+    }
+
+    public void setChecked(boolean checked) {
         this.checked = checked;
         notifyDataSetChanged();
     }
 
-    public void checkedAllItem(boolean isChecked)
-    {
-        int size = items.size();
-
-        for(int i =0 ; i<size; i++)
-        {
-            items.get(i).setSelected(isChecked);
+    public void checkedAllItem(boolean isChecked) {
+        for (AppContact c : items) {
+            c.setSelected(isChecked);
         }
         notifyDataSetChanged();
     }
 
-    public List<Contact> getCheckedItemList(){
-        int size = items.size();
-        List<Contact> checkedItemList = new ArrayList<>();
-        for(int i =0 ; i<size; i++)
-        {
-            if(items.get(i).isSelected())
-            {
-                checkedItemList.add(items.get(i));
+    public List<AppContact> getCheckedItemList() {
+        List<AppContact> checkedItemList = new ArrayList<>();
+        for (AppContact appContact : items) {
+            if (appContact.isSelected()) {
+                checkedItemList.add(appContact);
             }
         }
         return checkedItemList;
     }
 
-    public void removeItem()
-    {
+    public void removeItem() {
         int size = items.size();
-        for(int i =size-1 ; i>=0; i--)
-        {
-            if(items.get(i).isSelected())
-            {
+        for (int i = size - 1; i >= 0; i--) {
+            if (items.get(i).isSelected()) {
                 items.remove(i);
                 notifyItemRemoved(i);
             }
         }
-
     }
+
     //itemView inflater
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -109,44 +106,35 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
     }
 
     @Override
-    public void onBindViewHolder(final ViewHolder holder, final int position) {
-        holder.setItemData(items.get(position));
-        if(checked==true)
-        {
+    public void onBindViewHolder(final ViewHolder holder, int position) {
+        holder.item = items.get(holder.getAdapterPosition());
+        if (holder.item.getProfileThumbnail() == null) {
+            holder.contactFragment_recyclerview_circleImageView.setImageResource(R.drawable.ic_regit_user);
+        } else
+            Glide.with(mContext).load(holder.item.getProfileThumbnail()).into(holder.contactFragment_recyclerview_circleImageView);
 
+        holder.contactFragment_recyclerview_name_textview.setText(holder.item.getName());
+        holder.contactFragment_recyclerview_memo_textview.setText(holder.item.getPhone());
+        if (checked) {
             holder.checkBox.setVisibility(View.VISIBLE);
             holder.checkBox.setOnCheckedChangeListener(null);
-            holder.checkBox.setChecked(items.get(position).isSelected());
-            holder.mView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (items.get(position).isSelected()) {
-                        items.get(position).setSelected(false);
-                        holder.checkBox.setChecked(false);
-
-                    }
-                    else {
-                        items.get(position).setSelected(true);
-                        holder.checkBox.setChecked(true);
-                    }
+            holder.checkBox.setChecked(items.get(holder.getAdapterPosition()).isSelected());
+            holder.mView.setOnClickListener(view -> {
+                if (items.get(holder.getAdapterPosition()).isSelected()) {
+                    items.get(holder.getAdapterPosition()).setSelected(false);
+                    holder.checkBox.setChecked(false);
+                } else {
+                    items.get(position).setSelected(true);
+                    holder.checkBox.setChecked(true);
                 }
             });
-            holder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                    items.get(position).setSelected(b);
-                }
-            });
-        }
-        else if( checked ==false)
-        {
-            holder.mView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(holder.mView.getContext(), DetailContactActivity.class);
-                    intent.putExtra("detailContact",holder.item);
-                    mContext.startActivity(intent);
-                }
+            holder.checkBox.setOnCheckedChangeListener((compoundButton, b) -> items.get(position).setSelected(b));
+        } else if (!checked) {
+            holder.mView.setOnClickListener(view -> {
+                Intent intent = new Intent(holder.mView.getContext(), DetailContactActivity.class);
+                intent.putExtra("contactId", holder.item.getId());
+                intent.putParcelableArrayListExtra("myContactList", (ArrayList<? extends Parcelable>) items);
+                mContext.startActivity(intent);
             });
             holder.checkBox.setVisibility(View.GONE);
         }
@@ -154,8 +142,7 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
 
     @Override
     public int getItemCount() {
-        if(items==null)
-        {
+        if (items == null) {
             return 0;
         }
         return items.size();
@@ -164,7 +151,7 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         View mView;
-        Contact item;
+        AppContact item;
         @BindView(R.id.contactFragment_recyclerview_circleImageView)
         CircleImageView contactFragment_recyclerview_circleImageView;
         @BindView(R.id.contactFragment_recyclerview_name_textview)
@@ -178,20 +165,6 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
             super(itemView);
             ButterKnife.bind(this, itemView);
             mView = itemView;
-        }
-
-        public void setItemData(Contact item) {
-            this.item = item;
-            if(item.getProfile_img()==0)
-            {
-                contactFragment_recyclerview_circleImageView.setImageResource(R.drawable.ic_regit_user);
-            }
-            else{
-                contactFragment_recyclerview_circleImageView.setImageResource(item.getProfile_img());
-            }
-            contactFragment_recyclerview_name_textview.setText(item.getName());
-            if(item.getPhone() !=null)
-            contactFragment_recyclerview_memo_textview.setText(item.getPhone());
         }
     }
 }

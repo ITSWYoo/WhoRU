@@ -12,13 +12,18 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.yoo.ymh.whoru.view.activity.GroupMemberManagerActivity;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
+import com.yoo.ymh.whoru.view.activity.ModifyGroupMemberActivity;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.util.RxBus;
 import com.zaihuishou.expandablerecycleradapter.viewholder.AbstractExpandableAdapterItem;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by Yoo on 2016-08-17.
@@ -30,6 +35,7 @@ public class GroupItem extends AbstractExpandableAdapterItem {
     ImageView group_recyclerview_item_group_setting_imageView;
     @BindView(R.id.group_recyclerview_item_group_arrow_imageView)
     ImageView group_recyclerview_item_group_arrow_imageView;
+
     private Group mGroup;
     private RxBus _rxbus;
 
@@ -56,27 +62,11 @@ public class GroupItem extends AbstractExpandableAdapterItem {
     @Override
     public void onBindViews(final View root) {
         ButterKnife.bind(this, root);
-        root.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                doExpandOrUnexpand();
-                Toast.makeText(root.getContext(), group_recyclerview_item_group_name_textView.getText(), Toast.LENGTH_SHORT).show();
-            }
+        root.setOnClickListener(view -> {
+            doExpandOrUnexpand();
         });
-        root.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                Toast.makeText(root.getContext(), "longclick", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-        });
-        group_recyclerview_item_group_setting_imageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showDialog(root);
-            }
-        });
-
+        _rxbus = RxBus.getInstance();
+        group_recyclerview_item_group_setting_imageView.setOnClickListener(view -> showDialog(root));
     }
 
     @Override
@@ -91,90 +81,72 @@ public class GroupItem extends AbstractExpandableAdapterItem {
         onSetViews();
         onExpansionToggled(getExpandableListItem().isExpanded());
         mGroup = (Group) model;
-        group_recyclerview_item_group_name_textView.setText(mGroup.name + " (" + mGroup.groupMemberNum + ")");
+        String title;
+        title = mGroup.getName() + " (" + mGroup.getChildItemList().size() + ")";
+        group_recyclerview_item_group_name_textView.setText(title);
     }
 
-    public void showDialog(final View root){
+    public void showDialog(final View root) {
         MaterialDialog.Builder settingDialog = new MaterialDialog.Builder(root.getContext());
         settingDialog.title("그룹 관리")
                 .items(R.array.group_settings)
-                .itemsCallback(new MaterialDialog.ListCallback() {
-                    @Override
-                    public void onSelection(MaterialDialog dialog, View itemView, int which, CharSequence text) {
-                        String selectedItem = text.toString();
-                        switch (selectedItem) {
-                            case "그룹원 관리":
-                                Intent intent = new Intent(root.getContext(),GroupMemberManagerActivity.class);
-                                intent.putExtra("groupName",mGroup.name);
-                                root.getContext().startActivity(intent);
-//
-//                                Contact addItem = new Contact();
-//                                addItem.setName("ggg");
-//                                addItem.setPhone("123123");
-//
-//                                AddItem a = new AddItem();
-//                                a.c = addItem;
-//                                a.index = getItemIndex();
-//                                _rxbus = RxBus.getInstance();
-//                                if (getExpandableListItem().isExpanded()) {
-//                                    doExpandOrUnexpand();
-//                                    _rxbus.send(a);
-//                                    doExpandOrUnexpand();
-//                                }
-//                                else {
-//                                    _rxbus.send(a);
-//                                }
-                                return;
-                            case "그룹명 수정":
-                                Log.e("그룹명 수정", "수정");
-                                MaterialDialog.Builder modifyGroupDialog = new MaterialDialog.Builder(root.getContext());
-                                modifyGroupDialog.title("그룹명 수정")
-                                        .inputType(InputType.TYPE_CLASS_TEXT)
-                                        .input(null, mGroup.name, new MaterialDialog.InputCallback() {
-                                            @Override
-                                            public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
-                                                if(input.length()==0)
-                                                {
-                                                    Toast.makeText(root.getContext(),"최소 1글자 이상 입력해주세요",Toast.LENGTH_SHORT).show();
-                                                }
-                                                else {
-                                                    mGroup.name = input.toString();
-                                                    group_recyclerview_item_group_name_textView.setText(mGroup.name + " (" + mGroup.groupMemberNum + ")");
-                                                }
-                                            }
-                                        })
-                                        .show();
-                                return;
-                            case "그룹 삭제":
-
-                                MaterialDialog.Builder deleteGroupDialog = new MaterialDialog.Builder(root.getContext());
-                                deleteGroupDialog.title("그룹을 삭제하시겠습니까?")
-                                        .onPositive(new MaterialDialog.SingleButtonCallback() {
-                                            @Override
-                                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                                if (getExpandableListItem().isExpanded()) {
-                                                    doExpandOrUnexpand();
-                                                }
-                                                _rxbus = RxBus.getInstance();
-                                                if (_rxbus.hasObservers()) {
-                                                    RemoveGroup removeGroup = new RemoveGroup();
-                                                    removeGroup.setItemIndex(getItemIndex());
-                                                    _rxbus.send(removeGroup);
-                                                }
-                                            }
-                                        })
-                                        .negativeText("취소")
-                                        .positiveText("삭제")
-                                        .show();
-                                return;
-
-                        }
+                .itemsCallback((dialog, itemView, position, text) -> {
+                    String selectedItem = text.toString();
+                    switch (selectedItem) {
+                        case "그룹원 관리":
+                            Intent intent = new Intent(root.getContext(), ModifyGroupMemberActivity.class);
+                            Log.e("group", mGroup.getId() + " " + mGroup.getName() + " " + mGroup.getGroupMemberNum());
+                            for (AppContact c : mGroup.getmGroupMembers()) {
+                                Log.e("member", c.toString());
+                            }
+                            intent.putExtra("groupInfo", mGroup);
+                            root.getContext().startActivity(intent);
+                            return;
+                        case "그룹명 수정":
+                            MaterialDialog.Builder modifyGroupDialog = new MaterialDialog.Builder(root.getContext());
+                            modifyGroupDialog.title("그룹명 수정")
+                                    .inputType(InputType.TYPE_CLASS_TEXT)
+                                    .input(null, mGroup.getName(), (dialog1, input) ->
+                                    {
+                                        if (input.length() == 0) {
+                                            Toast.makeText(root.getContext(), "최소 1글자 이상 입력해주세요", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            ModifyGroupName modifyGroupName = new ModifyGroupName();
+                                            modifyGroupName.setName(input.toString());
+                                            modifyGroupName.setGroup(mGroup.getId());
+                                            _rxbus.send(modifyGroupName);
+                                            mGroup.setName(input.toString());
+                                            String title = mGroup.getName() + " (" + mGroup.getChildItemList().size() + ")";
+                                            group_recyclerview_item_group_name_textView.setText(title);
+                                        }
+                                    })
+                                    .show();
+                            return;
+                        case "그룹 삭제":
+                            MaterialDialog.Builder deleteGroupDialog = new MaterialDialog.Builder(root.getContext());
+                            deleteGroupDialog.title("그룹을 삭제하시겠습니까?")
+                                    .onPositive((dialog1, which1) -> {
+                                        if (getExpandableListItem().isExpanded()) {
+                                            doExpandOrUnexpand();
+                                        }
+                                        if (_rxbus.hasObservers()) {
+                                            RemoveGroup removeGroup = new RemoveGroup();
+                                            removeGroup.setItemIndex(getItemIndex());
+                                            removeGroup.setRemoveGroupId(mGroup.getId());
+                                            _rxbus.send(removeGroup);
+                                        }
+                                    })
+                                    .negativeText("취소")
+                                    .positiveText("삭제")
+                                    .show();
                     }
                 })
                 .show();
     }
-    public class RemoveGroup{
+
+    public class RemoveGroup {
         int itemIndex;
+        int removeGroupId;
 
         public int getItemIndex() {
             return itemIndex;
@@ -182,6 +154,51 @@ public class GroupItem extends AbstractExpandableAdapterItem {
 
         public void setItemIndex(int itemIndex) {
             this.itemIndex = itemIndex;
+        }
+
+        public int getRemoveGroupId() {
+            return removeGroupId;
+        }
+
+        public void setRemoveGroupId(int removeGroupId) {
+            this.removeGroupId = removeGroupId;
+        }
+    }
+
+    public class ModifyGroupName {
+        @SerializedName("_group")
+        @Expose
+        private Integer group;
+        @SerializedName("_name")
+        @Expose
+        private String name;
+
+        /**
+         * @return The group
+         */
+        public Integer getGroup() {
+            return group;
+        }
+
+        /**
+         * @param group The _group
+         */
+        public void setGroup(Integer group) {
+            this.group = group;
+        }
+
+        /**
+         * @return The name
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * @param name The _name
+         */
+        public void setName(String name) {
+            this.name = name;
         }
     }
 }
