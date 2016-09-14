@@ -3,33 +3,26 @@
 
     <group android:checkableBehavior="single">
         <item
+            android:id="@+id/nav_send"
+            android:icon="@drawable/ic_contacts_black_48dp"
+            android:title="휴대폰 연락처가져오기/내보내기" />
+        <item
             android:id="@+id/nav_camera"
             android:icon="@drawable/ic_menu_camera"
-            android:title="Import" />
-        <item
-            android:id="@+id/nav_gallery"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="Gallery" />
+            android:title="지인찾기" />
         <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_menu_slideshow"
-            android:title="Slideshow" />
+            android:title="로그아웃" />
         <item
             android:id="@+id/nav_manage"
             android:icon="@drawable/ic_menu_manage"
-            android:title="Tools" />
-    </group>
+            android:title="설정" />
 
-    <item android:title="Communicate">
-        <menu>
-            <item
-                android:id="@+id/nav_share"
-                android:icon="@drawable/ic_menu_share"
-                android:title="Share" />
-            <item
-                android:id="@+id/nav_send"
-                android:title="휴대폰 연락처가져오기/내보내기" />
-        </menu>
-    </item>
+        <item
+            android:id="@+id/nav_gallery"
+            android:icon="@drawable/ic_menu_gallery"
+            android:title="오픈소스 라이브러리" />
+    </group>
 
 </menu>

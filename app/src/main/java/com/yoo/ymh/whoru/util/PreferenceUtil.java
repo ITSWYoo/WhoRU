@@ -10,6 +10,8 @@ public class PreferenceUtil extends BasePreferenceUtil {
     private static PreferenceUtil _instance = null;
 
     private static final String PROPERTY_REG_ID = "registration_id";
+    private static final String PROPERTY_REG_FACEBOOK_ID = "facebook_id";
+    private static final String PROPERTY_REG_KAKAO_ID = "kakao_id";
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private static final String PROPERTY_PUSH_ID = "pushID";
     private static final String PROPERTY_PUSH_FLAG = "pushFlag";
@@ -28,6 +30,15 @@ public class PreferenceUtil extends BasePreferenceUtil {
         put(PROPERTY_REG_ID, $regId);
     }
 
+    public void putRedFacebookId(String $regFacebookId)
+    {
+        put(PROPERTY_REG_FACEBOOK_ID, $regFacebookId);
+    }
+
+    public void putRedKakaoId(String $regKakaoId)
+    {
+        put(PROPERTY_REG_KAKAO_ID, $regKakaoId);
+    }
 
     public void putRedPushId(String $regPushId) {
         put(PROPERTY_PUSH_ID, $regPushId);
@@ -42,6 +53,12 @@ public class PreferenceUtil extends BasePreferenceUtil {
         return get(PROPERTY_REG_ID);
     }
 
+    public String regFacebookId(){
+        return get(PROPERTY_REG_FACEBOOK_ID);
+    }
+    public String regKakaoId(){
+        return get(PROPERTY_REG_KAKAO_ID);
+    }
     public String regPushID() {
         return get(PROPERTY_PUSH_ID);
     }

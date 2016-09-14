@@ -18,10 +18,12 @@ public class MainViewPagerAdapter extends FragmentPagerAdapter {
     public MainViewPagerAdapter(FragmentManager fm, Context context) {
         super(fm);
         this.context = context;
+        
     }
 
     public void addFragment(Fragment fragment) {
         myFragments.add(fragment);
+
     }
 
     @Override

@@ -13,6 +13,7 @@ import java.util.List;
  * Created by Yoo on 2016-08-14.
  */
 public class AppContact implements Parcelable {
+
     @SerializedName("_id")
     @Expose
     private int id;
@@ -511,6 +512,26 @@ public class AppContact implements Parcelable {
     }
 
     public AppContact() {
+        this.setId(0);
+        this.setName("");
+        this.setPhone("");
+        this.setMemo("");
+        this.setEmail("");
+        this.setCardImage("");
+        this.setCardImageThumbnail("");
+        this.setCardImage_back("");
+        this.setCardImage_backThumbnail("");
+        this.setCompany("");
+        this.setCompanyAddress("");
+        this.setCompanyPhone("");
+        this.setFacebookAddress("");
+        this.setInstagramAddress("");
+        this.setLinkedinAddress("");
+        this.setExtraAddress("");
+        this.setDepartment("");
+        this.setResponsibility("");
+        this.setGroup(null);
+        this.setGoogleAddress("");
     }
 
 

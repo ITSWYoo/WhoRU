@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -133,6 +134,7 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
             holder.mView.setOnClickListener(view -> {
                 Intent intent = new Intent(holder.mView.getContext(), DetailContactActivity.class);
                 intent.putExtra("contactId", holder.item.getId());
+                Log.e("헐씨발",holder.item.getId()+"");
                 intent.putParcelableArrayListExtra("myContactList", (ArrayList<? extends Parcelable>) items);
                 mContext.startActivity(intent);
             });

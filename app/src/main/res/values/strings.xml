@@ -13,4 +13,9 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="facebook_app_id">247133135688007</string>
+    <string name="server_client_id">848460463283-sn6muuter8tvf4o2hb2uekvr5to26r56.apps.googleusercontent.com</string>
+
+    <string name="kakao_app_key">a1cb6c4b0c1b4620ea0056fc11f96a18</string>
+
+
 </resources>

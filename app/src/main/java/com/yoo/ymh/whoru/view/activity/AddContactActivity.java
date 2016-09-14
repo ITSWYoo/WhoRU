@@ -144,7 +144,7 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         compositeSubscription = new CompositeSubscription();
         contactListFromMain = new ArrayList<>();
         contactListFromMain = getIntent().getParcelableArrayListExtra("myContactList");
-        Log.e("mycontactlist",""+contactListFromMain.size());
+        Log.e("mycontactlist", "" + contactListFromMain.size());
         modifyContactId = getIntent().getIntExtra("modifyContactId", 0);
         _rxBus = RxBus.getInstance();
         if (modifyContactId != 0) {
@@ -315,7 +315,7 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             addContactActivity_editText_faxNumber.setText(modifyContact.getFaxPhone());
             addContactActivity_editText_email.setText(modifyContact.getEmail());
             addContactActivity_editText_companyAddress.setText(modifyContact.getCompanyAddress());
-            if (modifyContact.getFacebookAddress().length() > 0)
+            if (modifyContact.getFacebookAddress().length() > 0 )
                 addContactActivity_editText_facebook.setText(modifyContact.getFacebookAddress());
             if (modifyContact.getGoogleAddress().length() > 0)
                 addContactActivity_editText_google.setText(modifyContact.getGoogleAddress());
@@ -468,7 +468,7 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                                 if (_rxBus.hasObservers()) _rxBus.send(new AddContactSuccess());
                             } else
                                 Toast.makeText(AddContactActivity.this, "추가에 실패하였습니다.", Toast.LENGTH_SHORT).show();
-                        }, Throwable::printStackTrace,() -> removeCachePhoto()));
+                        }, Throwable::printStackTrace, () -> removeCachePhoto()));
             } else {
                 //편집의 경우 삭제후 추가 ..
                 RemovedContactList removedContactList = new RemovedContactList();
@@ -641,7 +641,8 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             cardImage = null;
         card_backImage = null;
     }
-    public void removeCachePhoto(){
+
+    public void removeCachePhoto() {
         if (profileResultUri != null) {  //이건 사진 찍엇을댸
             File f = new File(profileResultUri.getPath());
             if (f.exists()) {

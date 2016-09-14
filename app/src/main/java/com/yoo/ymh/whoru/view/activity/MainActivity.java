@@ -1,5 +1,7 @@
 package com.yoo.ymh.whoru.view.activity;
+
 import com.facebook.FacebookSdk;
+
 import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,16 +24,22 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginManager;
 import com.github.tamir7.contacts.Contact;
 import com.github.tamir7.contacts.Contacts;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
+import com.kakao.auth.Session;
+import com.kakao.usermgmt.UserManagement;
+import com.kakao.usermgmt.callback.LogoutResponseCallback;
 import com.yoo.ymh.whoru.adapter.MainViewPagerAdapter;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.model.AppContact;
 import com.yoo.ymh.whoru.model.AppContactList;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
+import com.yoo.ymh.whoru.util.PreferenceUtil;
 import com.yoo.ymh.whoru.util.RxBus;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 import com.yoo.ymh.whoru.view.fragment.AlarmFragment;
 import com.yoo.ymh.whoru.view.fragment.ContactFragment;
 import com.yoo.ymh.whoru.view.fragment.GroupFragment;
@@ -73,6 +81,8 @@ public class MainActivity extends AppCompatActivity
     private List<AppContact> appContactsfromContactFragment;
 
     private int tabImge[] = {R.drawable.ic_contacts_black_48dp, R.drawable.ic_group_black_48dp, R.drawable.ic_notifications_black_48dp, R.drawable.ic_face_black_48dp};
+    private final long FINISH_INTERVAL_TIME = 2000;
+    private long backPressedTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +99,15 @@ public class MainActivity extends AppCompatActivity
         if (mainActivity_drawerLayout.isDrawerOpen(GravityCompat.START)) {
             mainActivity_drawerLayout.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            long currentTime = System.currentTimeMillis();
+            long intervalTitme = currentTime - backPressedTime;
+
+            if (0 <= intervalTitme && FINISH_INTERVAL_TIME >= intervalTitme) {
+                super.onBackPressed();
+            } else {
+                backPressedTime = currentTime;
+                Toast.makeText(getApplicationContext(), "뒤로 한번더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -104,10 +122,23 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
-
+            //페이스북 로그인
+            if(PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regFacebookId()!=null) {
+                PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedFacebookId(null);
+                LoginManager.getInstance().logOut();
+            }
+            if(PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regKakaoId()!=null) {
+                UserManagement.requestLogout(new LogoutResponseCallback() {
+                    @Override
+                    public void onCompleteLogout() {
+                        PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedKakaoId(null);
+                    }
+                });
+            }
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish();
         } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
 
         } else if (id == R.id.nav_send) {
             getMyLocalContactList();
@@ -167,7 +198,7 @@ public class MainActivity extends AppCompatActivity
         Contacts.initialize(MainActivity.this);
         myLocalContactList = (ArrayList<Contact>) Contacts.getQuery().find();
         appContactList = new ArrayList<>();
-        AppContact item;
+        AppContact item= new AppContact();
 
         //휴대폰 연락처 앱 연락처로가져오기
         for (Contact c : myLocalContactList) {

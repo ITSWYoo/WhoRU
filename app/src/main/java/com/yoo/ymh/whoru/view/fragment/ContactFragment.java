@@ -297,6 +297,7 @@ public class ContactFragment extends Fragment implements SearchView.OnQueryTextL
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(appContactList1 -> {
                     hideProgress();
+                    appContactList = appContactList1.getData();
                     contactRecyclerViewAdapter.clear();
                     contactRecyclerViewAdapter.setItems(appContactList1.getData());
                     contactFragment_recyclerview.scrollToPosition(0);
