@@ -17,7 +17,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 /**
  * Created by Yoo on 2016-08-17.
  */
-public class GroupMemberItem extends AbstractAdapterItem {
+public class AppGroupMemberItem extends AbstractAdapterItem {
     @BindView(R.id.contactFragment_recyclerview_circleImageView)
     CircleImageView contactFragment_recyclerview_circleImageView;
     @BindView(R.id.contactFragment_recyclerview_name_textview)

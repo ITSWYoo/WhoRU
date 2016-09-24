@@ -23,13 +23,13 @@ public class MainViewPagerAdapter extends FragmentPagerAdapter {
 
     public void addFragment(Fragment fragment) {
         myFragments.add(fragment);
-
     }
 
     @Override
     public Fragment getItem(int position) {
         return myFragments.get(position);
     }
+
 
     @Override
     public int getCount() {

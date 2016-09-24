@@ -1,14 +1,14 @@
-package com.yoo.ymh.whoru.model;
 
+package com.yoo.ymh.whoru.model;
+/**
+ * Created by Yoo on 2016-09-02.
+ */
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Yoo on 2016-09-02.
- */
 public class AppContactList {
     @SerializedName("total")
     @Expose

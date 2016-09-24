@@ -1,28 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_send"
-            android:icon="@drawable/ic_contacts_black_48dp"
-            android:title="휴대폰 연락처가져오기/내보내기" />
-        <item
-            android:id="@+id/nav_camera"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="지인찾기" />
-        <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="로그아웃" />
+            android:id="@+id/nav_localContact"
+            android:title="휴대폰 연락처가져오기" />
         <item
             android:id="@+id/nav_manage"
-            android:icon="@drawable/ic_menu_manage"
             android:title="설정" />
-
         <item
-            android:id="@+id/nav_gallery"
-            android:icon="@drawable/ic_menu_gallery"
+            android:id="@+id/nav_log_out"
+            android:title="로그아웃" />
+        <item
+            android:id="@+id/nav_sign_out"
+            android:title="탈퇴" />
+        <item
+            android:id="@+id/nav_open_source_library"
             android:title="오픈소스 라이브러리" />
     </group>
-
 </menu>

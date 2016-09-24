@@ -2,7 +2,6 @@ package com.yoo.ymh.whoru.model;
 
 import android.animation.ObjectAnimator;
 import android.content.Intent;
-import android.support.annotation.NonNull;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
@@ -10,11 +9,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
 import com.yoo.ymh.whoru.view.activity.ModifyGroupMemberActivity;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.util.RxBus;
@@ -22,13 +19,11 @@ import com.zaihuishou.expandablerecycleradapter.viewholder.AbstractExpandableAda
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 
 /**
  * Created by Yoo on 2016-08-17.
  */
-public class GroupItem extends AbstractExpandableAdapterItem {
+public class AppGroupItem extends AbstractExpandableAdapterItem {
     @BindView(R.id.group_recyclerview_item_group_name_textView)
     TextView group_recyclerview_item_group_name_textView;
     @BindView(R.id.group_recyclerview_item_group_setting_imageView)
@@ -36,7 +31,7 @@ public class GroupItem extends AbstractExpandableAdapterItem {
     @BindView(R.id.group_recyclerview_item_group_arrow_imageView)
     ImageView group_recyclerview_item_group_arrow_imageView;
 
-    private Group mGroup;
+    private AppGroup mAppGroup;
     private RxBus _rxbus;
 
     @Override
@@ -80,9 +75,9 @@ public class GroupItem extends AbstractExpandableAdapterItem {
         super.onUpdateViews(model, position);
         onSetViews();
         onExpansionToggled(getExpandableListItem().isExpanded());
-        mGroup = (Group) model;
+        mAppGroup = (AppGroup) model;
         String title;
-        title = mGroup.getName() + " (" + mGroup.getChildItemList().size() + ")";
+        title = mAppGroup.getName() + " (" + mAppGroup.getChildItemList().size() + ")";
         group_recyclerview_item_group_name_textView.setText(title);
     }
 
@@ -95,28 +90,24 @@ public class GroupItem extends AbstractExpandableAdapterItem {
                     switch (selectedItem) {
                         case "그룹원 관리":
                             Intent intent = new Intent(root.getContext(), ModifyGroupMemberActivity.class);
-                            Log.e("group", mGroup.getId() + " " + mGroup.getName() + " " + mGroup.getGroupMemberNum());
-                            for (AppContact c : mGroup.getmGroupMembers()) {
-                                Log.e("member", c.toString());
-                            }
-                            intent.putExtra("groupInfo", mGroup);
+                            intent.putExtra("groupInfo", mAppGroup);
                             root.getContext().startActivity(intent);
                             return;
                         case "그룹명 수정":
                             MaterialDialog.Builder modifyGroupDialog = new MaterialDialog.Builder(root.getContext());
                             modifyGroupDialog.title("그룹명 수정")
                                     .inputType(InputType.TYPE_CLASS_TEXT)
-                                    .input(null, mGroup.getName(), (dialog1, input) ->
+                                    .input(null, mAppGroup.getName(), (dialog1, input) ->
                                     {
                                         if (input.length() == 0) {
                                             Toast.makeText(root.getContext(), "최소 1글자 이상 입력해주세요", Toast.LENGTH_SHORT).show();
                                         } else {
                                             ModifyGroupName modifyGroupName = new ModifyGroupName();
                                             modifyGroupName.setName(input.toString());
-                                            modifyGroupName.setGroup(mGroup.getId());
+                                            modifyGroupName.setGroup(mAppGroup.getId());
                                             _rxbus.send(modifyGroupName);
-                                            mGroup.setName(input.toString());
-                                            String title = mGroup.getName() + " (" + mGroup.getChildItemList().size() + ")";
+                                            mAppGroup.setName(input.toString());
+                                            String title = mAppGroup.getName() + " (" + mAppGroup.getChildItemList().size() + ")";
                                             group_recyclerview_item_group_name_textView.setText(title);
                                         }
                                     })
@@ -132,7 +123,7 @@ public class GroupItem extends AbstractExpandableAdapterItem {
                                         if (_rxbus.hasObservers()) {
                                             RemoveGroup removeGroup = new RemoveGroup();
                                             removeGroup.setItemIndex(getItemIndex());
-                                            removeGroup.setRemoveGroupId(mGroup.getId());
+                                            removeGroup.setRemoveGroupId(mAppGroup.getId());
                                             _rxbus.send(removeGroup);
                                         }
                                     })

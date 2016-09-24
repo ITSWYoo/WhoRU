@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -109,10 +110,15 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         holder.item = items.get(holder.getAdapterPosition());
+
+
         if (holder.item.getProfileThumbnail() == null) {
             holder.contactFragment_recyclerview_circleImageView.setImageResource(R.drawable.ic_regit_user);
         } else
             Glide.with(mContext).load(holder.item.getProfileThumbnail()).into(holder.contactFragment_recyclerview_circleImageView);
+
+        if(holder.item.getLinked() !=0) holder.contactFragment_recyclerview_linked.setVisibility(View.VISIBLE);
+        else holder.contactFragment_recyclerview_linked.setVisibility(View.GONE);
 
         holder.contactFragment_recyclerview_name_textview.setText(holder.item.getName());
         holder.contactFragment_recyclerview_memo_textview.setText(holder.item.getPhone());
@@ -134,7 +140,6 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
             holder.mView.setOnClickListener(view -> {
                 Intent intent = new Intent(holder.mView.getContext(), DetailContactActivity.class);
                 intent.putExtra("contactId", holder.item.getId());
-                Log.e("헐씨발",holder.item.getId()+"");
                 intent.putParcelableArrayListExtra("myContactList", (ArrayList<? extends Parcelable>) items);
                 mContext.startActivity(intent);
             });
@@ -162,6 +167,8 @@ public class ContactRecyclerViewAdapter extends RecyclerView.Adapter<ContactRecy
         TextView contactFragment_recyclerview_memo_textview;
         @BindView(R.id.checkBox)
         CheckBox checkBox;
+        @BindView(R.id.contactFragment_recyclerview_linked)
+        ImageView contactFragment_recyclerview_linked;
 
         public ViewHolder(final View itemView) {
             super(itemView);

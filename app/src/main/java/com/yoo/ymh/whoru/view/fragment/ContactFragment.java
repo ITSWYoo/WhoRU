@@ -2,7 +2,6 @@ package com.yoo.ymh.whoru.view.fragment;
 
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.MenuItemCompat;
@@ -18,16 +17,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.yoo.ymh.whoru.model.AppContact;
-import com.yoo.ymh.whoru.model.GroupList;
-import com.yoo.ymh.whoru.model.RemovedContactList;
+import com.yoo.ymh.whoru.model.AppGroupList;
+import com.yoo.ymh.whoru.model.RemovedAppContactList;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 import com.yoo.ymh.whoru.view.activity.AddContactActivity;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.util.RxBus;
@@ -41,7 +39,6 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.observables.ConnectableObservable;
 import rx.schedulers.Schedulers;
@@ -73,14 +70,14 @@ public class ContactFragment extends Fragment implements SearchView.OnQueryTextL
     private boolean isRefresh = true;
     private List<AppContact> appContactList;        //연락처 리스트
     private List<String> groupList_name;       //그룹 name만
-    private GroupList groupList;                     //retrofit 으로 가져온 그룹리스트 갯수 id ,name
+    private AppGroupList appGroupList;                     //retrofit 으로 가져온 그룹리스트 갯수 id ,name
     private RxBus _rxBus;
     private CompositeSubscription compositeSubscription;
     private ContactRecyclerViewAdapter contactRecyclerViewAdapter;
     private boolean checked;
 
 
-    private RemovedContactList removedContactIdList;
+    private RemovedAppContactList removedContactIdList;
 
     public static ContactFragment newInstance() {
         ContactFragment contactFragment = new ContactFragment();
@@ -133,7 +130,7 @@ public class ContactFragment extends Fragment implements SearchView.OnQueryTextL
                         MaterialDialog.Builder deleteGroupDialog = new MaterialDialog.Builder(getContext());
                         deleteGroupDialog.title("연락처를 삭제하시겠습니까?")
                                 .onPositive((dialog, which) -> {
-                                    removedContactIdList = new RemovedContactList();
+                                    removedContactIdList = new RemovedAppContactList();
                                     if (contactRecyclerViewAdapter.getCheckedItemList().size() > 0) {
                                         for (AppContact removedContact : contactRecyclerViewAdapter.getCheckedItemList()) {
                                             removedContactIdList.getData().add(removedContact.getId());
@@ -183,7 +180,7 @@ public class ContactFragment extends Fragment implements SearchView.OnQueryTextL
 
     public void initViews() {
         appContactList = new ArrayList<>();
-        groupList = new GroupList();
+        appGroupList = new AppGroupList();
         groupList_name = new ArrayList<>();
         checked = false;
         verticalRecyclerViewFastScroller.setRecyclerView(contactFragment_recyclerview);
@@ -292,7 +289,7 @@ public class ContactFragment extends Fragment implements SearchView.OnQueryTextL
 
     public void loadContactList() {
         showProgress();
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getAllContactList("abcd")
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getAllContactList(WhoRUApplication.getSessionId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(appContactList1 -> {
@@ -311,12 +308,12 @@ public class ContactFragment extends Fragment implements SearchView.OnQueryTextL
 
     public void loadGroupList() {
         showProgress();
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList("abcd")
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList(WhoRUApplication.getSessionId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(_groupList -> {
                     hideProgress();
-                    groupList = _groupList;
+                    appGroupList = _groupList;
                     groupList_name.clear();
                     for (int i = 0; i < _groupList.getTotal(); i++) {
                         groupList_name.add(_groupList.getData().get(i).getName());
@@ -324,9 +321,9 @@ public class ContactFragment extends Fragment implements SearchView.OnQueryTextL
                 }, Throwable::printStackTrace));
     }
 
-    public void removeContactList(RemovedContactList removedContactIdList) {
+    public void removeContactList(RemovedAppContactList removedContactIdList) {
         showProgress();
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteContact("abcd", removedContactIdList)
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteContact(WhoRUApplication.getSessionId(), removedContactIdList)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(o -> {

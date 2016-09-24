@@ -12,14 +12,14 @@ import java.util.List;
 /**
  * Created by Yoo on 2016-09-08.
  */
-public class GroupList implements Parcelable {
+public class AppGroupList implements Parcelable {
     @SerializedName("total")
     @Expose
     private int total;
 
     @SerializedName("data")
     @Expose
-    private List<Group> data = new ArrayList<Group>();
+    private List<AppGroup> data = new ArrayList<AppGroup>();
 
     /**
      * @return The total
@@ -38,14 +38,14 @@ public class GroupList implements Parcelable {
     /**
      * @return The data
      */
-    public List<Group> getData() {
+    public List<AppGroup> getData() {
         return data;
     }
 
     /**
      * @param data The data
      */
-    public void setData(List<Group> data) {
+    public void setData(List<AppGroup> data) {
         this.data = data;
     }
 
@@ -60,24 +60,24 @@ public class GroupList implements Parcelable {
         dest.writeList(this.data);
     }
 
-    public GroupList() {
+    public AppGroupList() {
     }
 
-    protected GroupList(Parcel in) {
+    protected AppGroupList(Parcel in) {
         this.total = in.readInt();
         this.data = new ArrayList<>();
-        in.readList(this.data, Group.class.getClassLoader());
+        in.readList(this.data, AppGroup.class.getClassLoader());
     }
 
-    public static final Parcelable.Creator<GroupList> CREATOR = new Parcelable.Creator<GroupList>() {
+    public static final Parcelable.Creator<AppGroupList> CREATOR = new Parcelable.Creator<AppGroupList>() {
         @Override
-        public GroupList createFromParcel(Parcel source) {
-            return new GroupList(source);
+        public AppGroupList createFromParcel(Parcel source) {
+            return new AppGroupList(source);
         }
 
         @Override
-        public GroupList[] newArray(int size) {
-            return new GroupList[size];
+        public AppGroupList[] newArray(int size) {
+            return new AppGroupList[size];
         }
     };
 }

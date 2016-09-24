@@ -5,6 +5,9 @@ import android.util.Log;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
+import com.yoo.ymh.whoru.model.FcmToken;
+import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 
 import java.io.IOException;
 
@@ -12,6 +15,7 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import rx.schedulers.Schedulers;
 
 
 public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
@@ -33,22 +37,24 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
     private void sendRegistrationToServer(String token) {
         // Add custom implementation, as needed.
 
-        OkHttpClient client = new OkHttpClient();
-        RequestBody body = new FormBody.Builder()
-                .add("Token", token)
-                .build();
+//        OkHttpClient client = new OkHttpClient();
+        FcmToken fcmToken = new FcmToken();
+        fcmToken.setToken(token);
 
-        //request
-        Request request = new Request.Builder()
-                .url("http://서버주소/fcm/register.php")
-                .post(body)
-                .build();
-
-        try {
-            client.newCall(request).execute();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(WhoRUApplication.getSessionId()!=null && WhoRUApplication.getSessionId().length()>0) {
+            WhoRURetrofit.getWhoRURetorfitInstance().sendFcmToken(WhoRUApplication.getSessionId(), fcmToken)
+                    .observeOn(Schedulers.io())
+                    .subscribe(s -> {
+                    }, Throwable::printStackTrace);
         }
+//
+//
+//        try {
+//            client.newCall(request).execute();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
     }
+
 }

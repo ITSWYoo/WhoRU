@@ -15,14 +15,15 @@ import android.view.ViewGroup;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.yoo.ymh.whoru.model.AppContact;
+import com.yoo.ymh.whoru.model.AppGroup;
+import com.yoo.ymh.whoru.model.AppGroupItem;
+import com.yoo.ymh.whoru.model.AppGroupMemberItem;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 import com.yoo.ymh.whoru.view.activity.AddGroupActivity;
 import com.yoo.ymh.whoru.view.activity.DetailContactActivity;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.util.RxBus;
-import com.yoo.ymh.whoru.model.Group;
-import com.yoo.ymh.whoru.model.GroupItem;
-import com.yoo.ymh.whoru.model.GroupMemberItem;
 import com.yoo.ymh.whoru.view.activity.ModifyGroupMemberActivity;
 import com.zaihuishou.expandablerecycleradapter.adapter.BaseExpandableAdapter;
 import com.zaihuishou.expandablerecycleradapter.viewholder.AbstractAdapterItem;
@@ -51,7 +52,7 @@ public class GroupFragment extends Fragment implements SwipeRefreshLayout.OnRefr
     private final int ITEM_TYPE_CONTACT = 2;
 
     private BaseExpandableAdapter mBaseExpandableAdapter;
-    private List<Group> mGroupList;
+    private List<AppGroup> mAppGroupList;
     private RxBus _rxBus;
     private CompositeSubscription compositeSubscription;
     private boolean isRefresh = true;
@@ -85,7 +86,7 @@ public class GroupFragment extends Fragment implements SwipeRefreshLayout.OnRefr
 
     private void initViews() {
         //retrofit 으로 그룹 가져오기.
-        mGroupList = new ArrayList<>();
+        mAppGroupList = new ArrayList<>();
         groupFragment_swipe_refresh_layout.setColorSchemeResources(R.color.colorPrimary, R.color.colorAccent, R.color.colorPrimaryDark);
         groupFragment_swipe_refresh_layout.setOnRefreshListener(this);
         groupFragment_swipe_refresh_layout.post(() -> {
@@ -129,23 +130,22 @@ public class GroupFragment extends Fragment implements SwipeRefreshLayout.OnRefr
         compositeSubscription//
                 .add(groupFragmentEventEmitter.subscribe(event -> {
                     if ((event instanceof AddGroupActivity.AddGroup) || (event instanceof DetailContactActivity.SuccessModifyGroup) || (event instanceof ModifyGroupMemberActivity.ModifyGroupSuccess)) {
-                        Log.e("loadgroup","loadg");
                         loadGroupAndMemberList();
-                    } else if (event instanceof GroupItem.RemoveGroup) {
+                    } else if (event instanceof AppGroupItem.RemoveGroup) {
                         DeleteGroupId deleteGroupId = new DeleteGroupId();
-                        deleteGroupId.setDeleteGroupId(((GroupItem.RemoveGroup) event).getRemoveGroupId());
-                        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteGroup("abcd", deleteGroupId)
+                        deleteGroupId.setDeleteGroupId(((AppGroupItem.RemoveGroup) event).getRemoveGroupId());
+                        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteGroup(WhoRUApplication.getSessionId(), deleteGroupId)
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(s -> {
                                     mBaseExpandableAdapter.collapseAllParents();
-                                    mBaseExpandableAdapter.removedItem(((GroupItem.RemoveGroup) event).getItemIndex());
+                                    mBaseExpandableAdapter.removedItem(((AppGroupItem.RemoveGroup) event).getItemIndex());
                                 }));
-                    } else if(event instanceof GroupItem.ModifyGroupName)
+                    } else if(event instanceof AppGroupItem.ModifyGroupName)
                     {
-                        GroupItem.ModifyGroupName modifyGroupName = (GroupItem.ModifyGroupName) event;
+                        AppGroupItem.ModifyGroupName modifyGroupName = (AppGroupItem.ModifyGroupName) event;
                         Log.e("modify",modifyGroupName.getName()+":"+modifyGroupName.getGroup());
-                        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyGroupName("abcd", modifyGroupName)
+                        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyGroupName(WhoRUApplication.getSessionId(), modifyGroupName)
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(s -> {},Throwable::printStackTrace));
@@ -156,29 +156,29 @@ public class GroupFragment extends Fragment implements SwipeRefreshLayout.OnRefr
 
     public void loadGroupAndMemberList() {
         showProgress();
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupAndMemberList("abcd")
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupAndMemberList(WhoRUApplication.getSessionId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(groupList -> {
                     hideProgress();
-                    mGroupList = groupList.getData();
-                    mBaseExpandableAdapter = new BaseExpandableAdapter(mGroupList) {
+                    mAppGroupList = groupList.getData();
+                    mBaseExpandableAdapter = new BaseExpandableAdapter(mAppGroupList) {
                         @NonNull
                         @Override
                         public AbstractAdapterItem<Object> getItemView(Object type) {
                             int itemType = (int) type;
                             switch (itemType) {
                                 case ITEM_TYPE_GROUP:
-                                    return new GroupItem();
+                                    return new AppGroupItem();
                                 case ITEM_TYPE_CONTACT:
-                                    return new GroupMemberItem();
+                                    return new AppGroupMemberItem();
                             }
                             return null;
                         }
 
                         @Override
                         public Object getItemViewType(Object t) {
-                            if (t instanceof Group) {
+                            if (t instanceof AppGroup) {
                                 return ITEM_TYPE_GROUP;
                             } else if (t instanceof AppContact)
                                 return ITEM_TYPE_CONTACT;

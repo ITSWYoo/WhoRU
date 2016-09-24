@@ -5,11 +5,10 @@
         android:title="전체 선택"
         android:checkable="true"
         app:actionViewClass="android.widget.CheckBox"
-        app:showAsAction="ifRoom|withText"
-        ></item>
+        app:showAsAction="ifRoom|withText" />
+
     <item android:id="@+id/action_done"
         android:title="@string/action_done"
         android:icon="@drawable/ic_done_white_36dp"
         app:showAsAction="ifRoom|collapseActionView"/>
-
 </menu>

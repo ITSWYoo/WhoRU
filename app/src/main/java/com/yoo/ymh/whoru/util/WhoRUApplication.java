@@ -16,6 +16,7 @@ import com.yoo.ymh.whoru.adapter.KaKaoSdkAdapter;
 public class WhoRUApplication extends Application{
     private static Context mContext;
     private static Activity currentActivity;
+    public static String sessionId;
 
     @Override
     public void onCreate() {
@@ -41,5 +42,15 @@ public class WhoRUApplication extends Application{
     public void onTerminate() {
         super.onTerminate();
         mContext = null;
+    }
+
+    public static void setSessionId(String sessionId)
+    {
+        WhoRUApplication.sessionId = sessionId;
+    }
+
+    public static String getSessionId()
+    {
+        return sessionId;
     }
 }

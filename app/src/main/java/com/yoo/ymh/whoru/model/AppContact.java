@@ -22,7 +22,7 @@ public class AppContact implements Parcelable {
     private String provider;
     @SerializedName("_providerId")
     @Expose
-    private int providerId;
+    private String providerId;
     @SerializedName("_fcmToken")
     @Expose
     private String fcmToken;
@@ -76,7 +76,7 @@ public class AppContact implements Parcelable {
     private String extraAddress;
     @SerializedName("_group")
     @Expose
-    private List<Group> group = new ArrayList<>();
+    private List<AppGroup> appGroup = new ArrayList<>();
     @SerializedName("_profileImage")
     @Expose
     private String profileImage;
@@ -95,6 +95,9 @@ public class AppContact implements Parcelable {
     @SerializedName("_cardThumbnail1")
     @Expose
     private String cardImage_backThumbnail;
+    @SerializedName("_linked")
+    @Expose
+    private int linked;
     private boolean selected;
 
     /**
@@ -128,14 +131,14 @@ public class AppContact implements Parcelable {
     /**
      * @return The providerId
      */
-    public int getProviderId() {
+    public String getProviderId() {
         return providerId;
     }
 
     /**
      * @param providerId The _providerId
      */
-    public void setProviderId(int providerId) {
+    public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
 
@@ -372,17 +375,17 @@ public class AppContact implements Parcelable {
     }
 
     /**
-     * @return The group
+     * @return The appGroup
      */
-    public List<Group> getGroup() {
-        return group;
+    public List<AppGroup> getAppGroup() {
+        return appGroup;
     }
 
     /**
-     * @param group The _group
+     * @param appGroup The _group
      */
-    public void setGroup(List<Group> group) {
-        this.group = group;
+    public void setAppGroup(List<AppGroup> appGroup) {
+        this.appGroup = appGroup;
     }
 
     /**
@@ -471,6 +474,20 @@ public class AppContact implements Parcelable {
         this.cardImage_backThumbnail = cardImage_backThumbnail;
     }
 
+    /**
+     * @return The linked
+     */
+    public int getLinked() {
+        return linked;
+    }
+
+    /**
+     * @param linked The _linked
+     */
+    public void setLinked(int linked) {
+        this.linked = linked;
+    }
+
     public boolean isSelected() {
         return selected;
     }
@@ -530,8 +547,9 @@ public class AppContact implements Parcelable {
         this.setExtraAddress("");
         this.setDepartment("");
         this.setResponsibility("");
-        this.setGroup(null);
+        this.setAppGroup(null);
         this.setGoogleAddress("");
+        this.setLinked(0);
     }
 
 
@@ -544,7 +562,7 @@ public class AppContact implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(this.id);
         dest.writeString(this.provider);
-        dest.writeInt(this.providerId);
+        dest.writeString(this.providerId);
         dest.writeString(this.fcmToken);
         dest.writeString(this.name);
         dest.writeString(this.phone);
@@ -562,7 +580,7 @@ public class AppContact implements Parcelable {
         dest.writeString(this.linkedinAddress);
         dest.writeString(this.blogAddress);
         dest.writeString(this.extraAddress);
-        dest.writeList(this.group);
+        dest.writeList(this.appGroup);
         dest.writeString(this.profileImage);
         dest.writeString(this.profileThumbnail);
         dest.writeString(this.cardImage);
@@ -570,12 +588,13 @@ public class AppContact implements Parcelable {
         dest.writeString(this.cardImageThumbnail);
         dest.writeString(this.cardImage_backThumbnail);
         dest.writeByte(this.selected ? (byte) 1 : (byte) 0);
+        dest.writeInt(this.linked);
     }
 
     protected AppContact(Parcel in) {
         this.id = in.readInt();
         this.provider = in.readString();
-        this.providerId = in.readInt();
+        this.provider = in.readString();
         this.fcmToken = in.readString();
         this.name = in.readString();
         this.phone = in.readString();
@@ -593,8 +612,8 @@ public class AppContact implements Parcelable {
         this.linkedinAddress = in.readString();
         this.blogAddress = in.readString();
         this.extraAddress = in.readString();
-        this.group = new ArrayList<>();
-        in.readList(this.group, Group.class.getClassLoader());
+        this.appGroup = new ArrayList<>();
+        in.readList(this.appGroup, AppGroup.class.getClassLoader());
         this.profileImage = in.readString();
         this.profileThumbnail = in.readString();
         this.cardImage = in.readString();
@@ -602,6 +621,7 @@ public class AppContact implements Parcelable {
         this.cardImageThumbnail = in.readString();
         this.cardImage_backThumbnail = in.readString();
         this.selected = in.readByte() != 0;
+        this.linked = in.readInt();
     }
 
     public static final Creator<AppContact> CREATOR = new Creator<AppContact>() {

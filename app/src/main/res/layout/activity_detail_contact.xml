@@ -29,7 +29,7 @@
                     android:id="@+id/detailContactActivity_imageView_card"
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
-                    android:background="@color/colorAccent"
+                    android:src="@color/colorAccent"
                     android:scaleType="centerCrop" />
 
                 <TextView
@@ -53,7 +53,7 @@
                 app:layout_collapseMode="pin"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
                 app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-                app:title=" "></android.support.v7.widget.Toolbar>
+                app:title=" "/>
         </android.support.design.widget.CollapsingToolbarLayout>
     </android.support.design.widget.AppBarLayout>
 

@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -31,11 +32,12 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.model.AppContact;
-import com.yoo.ymh.whoru.model.GroupList;
-import com.yoo.ymh.whoru.model.RemovedContactList;
+import com.yoo.ymh.whoru.model.AppGroupList;
+import com.yoo.ymh.whoru.model.RemovedAppContactList;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
 import com.yoo.ymh.whoru.util.GeocodingTask;
 import com.yoo.ymh.whoru.util.RxBus;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +56,7 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
     private int geocoderRetryCount = 0;
     private int contactId;
     private RxBus _rxBus;
+    private AppContact detailContact;
     @BindView(R.id.detailContactActivity_toolbar)
     Toolbar detailContactActivity_toolbar;
 
@@ -140,9 +143,9 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
 
     @BindView(R.id.detailContactActivity_button_delete)
     Button detailContactActivity_button_delete;
-    private RemovedContactList removedContactIdList;
+    private RemovedAppContactList removedContactIdList;
     private Integer[] selectedGroup;
-    private GroupList groupList = new GroupList();
+    private AppGroupList appGroupList = new AppGroupList();
     private List<String> groupList_name = new ArrayList<>();
     private ArrayList<Integer> selected_groupIdList = new ArrayList<>();
     private String selectedGroupName;
@@ -162,11 +165,15 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
     protected void onResume() {
         super.onResume();
         mapView.onResume();
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getLocalDetailContact("abcd", contactId)
+        Log.e("detail", "resume");
+        setToolbar();
+        loadGroupList();
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getLocalDetailContact(WhoRUApplication.getSessionId(), contactId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(appContact -> loadView(appContact), Throwable::printStackTrace));
-        loadGroupList();
+                .subscribe(appContact -> detailContact = appContact, Throwable::printStackTrace, () -> {
+                    loadView(detailContact);
+                }));
     }
 
     @Override
@@ -247,9 +254,13 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
         } else {
             detailContactActivity_circleImageView_profile.setImageResource(R.drawable.ic_regit_user);
         }
-        if (appContact.getCardImage() != null) {
+        if (appContact.getCardImageThumbnail() != null && appContact.getCardImageThumbnail().length() > 0) {
             detailContactActivity_textView_card_default.setVisibility(View.INVISIBLE);
             Glide.with(getApplicationContext()).load(appContact.getCardImageThumbnail()).into(detailContactActivity_imageView_card);
+        } else {
+            detailContactActivity_textView_card_default.setVisibility(View.VISIBLE);
+            detailContactActivity_imageView_card.setImageResource(0);
+            detailContactActivity_imageView_card.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
         }
         detailContactActivity_textView_name.setText(appContact.getName());
         if (appContact.getResponsibility() != null && appContact.getResponsibility().length() > 0) {
@@ -269,9 +280,7 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
         }
         detailContactActivity_textView_memo.setOnClickListener(view1 -> {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
-
             alert.setTitle("메모남기기");
-
             // Set an EditText view to get user input
             final EditText input = new EditText(this);
             alert.setView(input);
@@ -282,7 +291,7 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
                     AppContact modifyMemo = new AppContact();
                     modifyMemo.setId(contactId);
                     modifyMemo.setMemo(value);
-                    compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyMemo("abcd", modifyMemo)
+                    compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyMemo(WhoRUApplication.getSessionId(), modifyMemo)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(s -> {
@@ -303,15 +312,21 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
 
             alert.show();
         });
+
+
         detailContactActivity_textView_group.setOnClickListener(view1 -> {
-            setGroupDialog();
+            if (groupList_name.isEmpty() || groupList_name.size() == 0) {
+                Toast.makeText(DetailContactActivity.this, "그룹이 없습니다. 그룹을 생성해주세요.", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(DetailContactActivity.this, AddGroupActivity.class);
+                startActivity(intent);
+            } else setGroupDialog();
         });
-        if (appContact.getGroup().size() > 0) {
+        if (appContact.getAppGroup().size() > 0) {
             String groupListStr = "";
-            for (int i = 0; i < appContact.getGroup().size(); i++) {
-                if (i == appContact.getGroup().size() - 1)
-                    groupListStr += appContact.getGroup().get(i).getName();
-                else groupListStr += appContact.getGroup().get(i).getName() + ", ";
+            for (int i = 0; i < appContact.getAppGroup().size(); i++) {
+                if (i == appContact.getAppGroup().size() - 1)
+                    groupListStr += appContact.getAppGroup().get(i).getName();
+                else groupListStr += appContact.getAppGroup().get(i).getName() + ", ";
             }
             detailContactActivity_textView_group.setText(groupListStr);
         } else detailContactActivity_textView_group.setText("그룹");
@@ -362,8 +377,10 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
                 String url = "http://";
                 if (detailContactActivity_textView_facebook.getText().toString().contains(url)) {
                     intent = new Intent(Intent.ACTION_VIEW, Uri.parse(detailContactActivity_textView_facebook.getText().toString()));
-                } else url += detailContactActivity_textView_facebook.getText().toString();
-                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                } else {
+                    url += detailContactActivity_textView_facebook.getText().toString();
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                }
                 startActivity(intent);
             });
         }
@@ -376,8 +393,10 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
                 String url = "http://";
                 if (detailContactActivity_textView_google.getText().toString().contains(url)) {
                     intent = new Intent(Intent.ACTION_VIEW, Uri.parse(detailContactActivity_textView_google.getText().toString()));
-                } else url += detailContactActivity_textView_google.getText().toString();
-                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                } else {
+                    url += detailContactActivity_textView_google.getText().toString();
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                }
                 startActivity(intent);
             });
         }
@@ -390,8 +409,10 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
                 String url = "http://";
                 if (detailContactActivity_textView_linkedIn.getText().toString().contains(url)) {
                     intent = new Intent(Intent.ACTION_VIEW, Uri.parse(detailContactActivity_textView_linkedIn.getText().toString()));
-                } else url += detailContactActivity_textView_linkedIn.getText().toString();
-                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                } else {
+                    url += detailContactActivity_textView_linkedIn.getText().toString();
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                }
                 startActivity(intent);
             });
         }
@@ -404,8 +425,10 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
                 String url = "http://";
                 if (detailContactActivity_textView_instagram.getText().toString().contains(url)) {
                     intent = new Intent(Intent.ACTION_VIEW, Uri.parse(detailContactActivity_textView_instagram.getText().toString()));
-                } else url += detailContactActivity_textView_instagram.getText().toString();
-                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                } else {
+                    url += detailContactActivity_textView_instagram.getText().toString();
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                }
                 startActivity(intent);
             });
         }
@@ -418,8 +441,10 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
                 String url = "http://";
                 if (detailContactActivity_textView_anotherSns.getText().toString().contains(url)) {
                     intent = new Intent(Intent.ACTION_VIEW, Uri.parse(detailContactActivity_textView_anotherSns.getText().toString()));
-                } else url += detailContactActivity_textView_anotherSns.getText().toString();
-                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                } else {
+                    url += detailContactActivity_textView_anotherSns.getText().toString();
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                }
                 startActivity(intent);
             });
         }
@@ -442,9 +467,9 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
             MaterialDialog.Builder deleteGroupDialog = new MaterialDialog.Builder(DetailContactActivity.this);
             deleteGroupDialog.title("연락처를 삭제하시겠습니까?")
                     .onPositive((dialog, which) -> {
-                        removedContactIdList = new RemovedContactList();
+                        removedContactIdList = new RemovedAppContactList();
                         removedContactIdList.getData().add(contactId);
-                        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteContact("abcd", removedContactIdList)
+                        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteContact(WhoRUApplication.getSessionId(), removedContactIdList)
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(s -> {
@@ -513,20 +538,20 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
                     selected_groupIdList = new ArrayList<>();
                     if (text.length > 0) {
                         for (int j = 0; j < text.length; j++) {
-                            for (int i = 0; i < groupList.getTotal(); i++) {
-                                if (text[j].toString().equals(groupList.getData().get(i).getName())) {
-                                    selected_groupIdList.add(groupList.getData().get(i).getId());
+                            for (int i = 0; i < appGroupList.getTotal(); i++) {
+                                if (text[j].toString().equals(appGroupList.getData().get(i).getName())) {
+                                    selected_groupIdList.add(appGroupList.getData().get(i).getId());
                                     if (j < text.length - 1)
-                                        selectedGroupName += groupList.getData().get(i).getName() + " , ";
+                                        selectedGroupName += appGroupList.getData().get(i).getName() + " , ";
                                     else
-                                        selectedGroupName += groupList.getData().get(i).getName();
+                                        selectedGroupName += appGroupList.getData().get(i).getName();
                                     break;
                                 }
                             }
                             ModifyGroup modifyGroup = new ModifyGroup();
                             modifyGroup.setId(contactId);
                             modifyGroup.setGroup(selected_groupIdList);
-                            compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyGroup("abcd", modifyGroup)
+                            compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyGroup(WhoRUApplication.getSessionId(), modifyGroup)
                                     .subscribeOn(Schedulers.io())
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe(s -> {
@@ -547,11 +572,11 @@ public class DetailContactActivity extends AppCompatActivity implements OnMapRea
     }
 
     public void loadGroupList() {
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList("abcd")
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList(WhoRUApplication.getSessionId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(_groupList -> {
-                    groupList = _groupList;
+                    appGroupList = _groupList;
                     groupList_name.clear();
                     for (int i = 0; i < _groupList.getTotal(); i++) {
                         groupList_name.add(_groupList.getData().get(i).getName());

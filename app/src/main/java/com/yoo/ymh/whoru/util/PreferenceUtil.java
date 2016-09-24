@@ -15,6 +15,7 @@ public class PreferenceUtil extends BasePreferenceUtil {
     private static final String PROPERTY_APP_VERSION = "appVersion";
     private static final String PROPERTY_PUSH_ID = "pushID";
     private static final String PROPERTY_PUSH_FLAG = "pushFlag";
+    private static final String PROPERTY_PHONE_NUMBER = "phone_number";
 
     public static synchronized PreferenceUtil instance(Context $context) {
         if (_instance == null)
@@ -40,14 +41,13 @@ public class PreferenceUtil extends BasePreferenceUtil {
         put(PROPERTY_REG_KAKAO_ID, $regKakaoId);
     }
 
-    public void putRedPushId(String $regPushId) {
-        put(PROPERTY_PUSH_ID, $regPushId);
-    }
+
 
     public void putRedPushFlag(Boolean $regPushFlag) {
         put(PROPERTY_PUSH_FLAG, $regPushFlag);
     }
 
+    public void putRedPhoneNumber(String $regPhoneNumber){ put(PROPERTY_PHONE_NUMBER,$regPhoneNumber);}
 
     public String regId() {
         return get(PROPERTY_REG_ID);
@@ -59,10 +59,9 @@ public class PreferenceUtil extends BasePreferenceUtil {
     public String regKakaoId(){
         return get(PROPERTY_REG_KAKAO_ID);
     }
-    public String regPushID() {
-        return get(PROPERTY_PUSH_ID);
+    public String regPhoneNumber(){
+        return get(PROPERTY_PHONE_NUMBER);
     }
-
     public Boolean regPushFlag() {
         return get(PROPERTY_PUSH_FLAG, true);
     }

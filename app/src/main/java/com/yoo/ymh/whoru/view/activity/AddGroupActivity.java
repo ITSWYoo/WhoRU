@@ -11,10 +11,11 @@ import android.widget.Toast;
 
 import com.rengwuxian.materialedittext.MaterialEditText;
 import com.yoo.ymh.whoru.R;
-import com.yoo.ymh.whoru.model.Group;
-import com.yoo.ymh.whoru.model.GroupList;
+import com.yoo.ymh.whoru.model.AppGroup;
+import com.yoo.ymh.whoru.model.AppGroupList;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
 import com.yoo.ymh.whoru.util.RxBus;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -26,7 +27,7 @@ import rx.subscriptions.CompositeSubscription;
 public class AddGroupActivity extends AppCompatActivity {
     private RxBus _rxBus = null;
     private CompositeSubscription compositeSubscription;
-    private GroupList myGroupList;
+    private AppGroupList myAppGroupList;
     @BindView(R.id.groupAddActivity_toolbar)
     Toolbar groupAddActivity_toolbar;
 
@@ -68,10 +69,10 @@ public class AddGroupActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList("abcd")
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList(WhoRUApplication.getSessionId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.newThread())
-                .subscribe(groupList -> myGroupList = groupList)
+                .subscribe(groupList -> myAppGroupList = groupList)
         );
     }
 
@@ -83,13 +84,13 @@ public class AddGroupActivity extends AppCompatActivity {
     }
 
     public class AddGroup {
-        Group addItem;
+        AppGroup addItem;
 
-        public Group getAddItem() {
+        public AppGroup getAddItem() {
             return addItem;
         }
 
-        public void setAddItem(Group addItem) {
+        public void setAddItem(AppGroup addItem) {
             this.addItem = addItem;
         }
     }
@@ -100,9 +101,9 @@ public class AddGroupActivity extends AppCompatActivity {
         } else {
             if (checkGroupList()) {
                 String groupName = groupAddActivity_editText_groupName.getText().toString();
-                Group addItem = new Group();
+                AppGroup addItem = new AppGroup();
                 addItem.setName(groupName);
-                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().addGroup("abcd", addItem)
+                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().addGroup(WhoRUApplication.getSessionId(), addItem)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(s -> {
@@ -118,9 +119,9 @@ public class AddGroupActivity extends AppCompatActivity {
     }
 
     public boolean checkGroupList() {
-        if (myGroupList != null && myGroupList.getTotal() > 0) {
-            for (int i = 0; i < myGroupList.getTotal(); i++) {
-                if (myGroupList.getData().get(i).getName().equals(groupAddActivity_editText_groupName.getText().toString())) {
+        if (myAppGroupList != null && myAppGroupList.getTotal() > 0) {
+            for (int i = 0; i < myAppGroupList.getTotal(); i++) {
+                if (myAppGroupList.getData().get(i).getName().equals(groupAddActivity_editText_groupName.getText().toString())) {
                     Toast.makeText(AddGroupActivity.this, "이미 존재하는 그룹입니다.", Toast.LENGTH_SHORT).show();
                     return false;
                 }

@@ -1,5 +1,6 @@
 package com.yoo.ymh.whoru.view.activity;
 
+import android.Manifest;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -11,24 +12,28 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.telephony.PhoneNumberFormattingTextWatcher;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.bumptech.glide.Glide;
+import com.gun0912.tedpermission.PermissionListener;
+import com.gun0912.tedpermission.TedPermission;
 import com.yalantis.ucrop.UCrop;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.model.AppContact;
-import com.yoo.ymh.whoru.model.GroupList;
-import com.yoo.ymh.whoru.model.RemovedContactList;
+import com.yoo.ymh.whoru.model.AppGroupList;
+import com.yoo.ymh.whoru.model.RemovedAppContactList;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
 import com.yoo.ymh.whoru.util.RxBus;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +48,9 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
@@ -65,8 +72,12 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
     EditText addContactActivity_editText_responsibility;
     @BindView(R.id.addContactActivity_editText_memo)
     EditText addContactActivity_editText_memo;
+    @BindView(R.id.addContactActivity_layout_memo)
+    LinearLayout addContactActivity_layout_memo;
     @BindView(R.id.addContactActivity_textView_group)
     TextView addContactActivity_textView_group;
+    @BindView(R.id.addContactActivity_layout_group)
+    LinearLayout addContactActivity_layout_group;
     @BindView(R.id.addContactActivity_editText_phoneNumber)
     EditText addContactActivity_editText_phoneNumber;
     @BindView(R.id.addContactActivity_editText_companyNumber)
@@ -119,8 +130,8 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
     private String instagramAddress = "";
     private static final String defaultSns[] = {"http://facebook.com/", "http://plus.google.com/", "http://kr.linkedin.com/in/", "http://instagram.com/"};
 
-    //GroupList 와 그룹 이름만.
-    private GroupList groupList = new GroupList();
+    //AppGroupList 와 그룹 이름만.
+    private AppGroupList appGroupList = new AppGroupList();
     private List<String> groupList_name = new ArrayList<>();
     private ArrayList<Integer> selected_groupIdList = new ArrayList<>();
     private ArrayList<AppContact> contactListFromMain; //현재 저장된 연락처 -> 중복 저장을 피하기 위해
@@ -134,21 +145,35 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
     private Map<String, RequestBody> map;
     private int modifyContactId;
     private AppContact modifyContact;
+    private AppContact modifyMyContact;
     private Integer[] selectedGroup;
+    private int modifyMyInfo;
+    private boolean deleteProfileImage;
+    private boolean deleteCardImage;
+    private AppContact deleteImageContact;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_contact);
         ButterKnife.bind(this);
+        getPermission();
         compositeSubscription = new CompositeSubscription();
         contactListFromMain = new ArrayList<>();
         contactListFromMain = getIntent().getParcelableArrayListExtra("myContactList");
-        Log.e("mycontactlist", "" + contactListFromMain.size());
         modifyContactId = getIntent().getIntExtra("modifyContactId", 0);
+        modifyMyInfo = getIntent().getIntExtra("modifyMyInfo", 0);
         _rxBus = RxBus.getInstance();
-        if (modifyContactId != 0) {
-            compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getLocalDetailContact("abcd", modifyContactId)
+        deleteImageContact = new AppContact();
+
+        //연락처추가
+        if (modifyContactId == 0 && modifyMyInfo == 0) {
+            initViews();
+        }
+        //연락처 수정
+        else if (modifyContactId != 0) {
+            //이미지 삭제 없을떄
+            compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getLocalDetailContact(WhoRUApplication.getSessionId(), modifyContactId)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(appContact -> {
@@ -156,7 +181,17 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                         modifyContact.setId(modifyContactId);
                         initViews();
                     }, Throwable::printStackTrace));
-        } else initViews();
+        }
+        //내 정보 수정
+        else if (modifyMyInfo != 0) {
+            compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getMyInfo(WhoRUApplication.getSessionId())
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(appContact -> {
+                        modifyMyContact = appContact;
+                        initViews();
+                    }));
+        }
     }
 
     @Override
@@ -253,10 +288,12 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         Bitmap cropImage = MediaStore.Images.Media.getBitmap(getContentResolver(), UCrop.getOutput(result)); //크롭 마친 최종 이미지 -> 서버로 전달 후 삭제.
         if (profileImageClicked) {
             profileResultUri = UCrop.getOutput(result);
+            addContactActivity_circleImageView_profile.setImageResource(0);
             addContactActivity_circleImageView_profile.setImageBitmap(cropImage);
         }
         if (cardImageClicked) {
             cardResultUri = UCrop.getOutput(result);
+            addContactActivity_imageView_card.setImageResource(0);
             addContactActivity_imageView_card.setImageBitmap(cropImage);
             addContactActivity_editText_card_default.setVisibility(View.GONE);
         }
@@ -281,32 +318,75 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
 
     public void initViews() {
         setToolbar();
-        addContactActivity_textView_group.setOnClickListener(view -> {
-            if (groupList_name.isEmpty() || groupList_name.size() == 0) {
-                Toast.makeText(AddContactActivity.this, "그룹이 없습니다. 그룹을 생성해주세요.", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(AddContactActivity.this, AddGroupActivity.class);
-                startActivity(intent);
-            } else {
-                setGroupDialog();
-            }
-        });
+
+        if (modifyMyContact != null) {
+            addContactActivity_layout_memo.setVisibility(View.GONE);
+            addContactActivity_layout_group.setVisibility(View.GONE);
+        } else {
+            addContactActivity_textView_group.setOnClickListener(view -> {
+                if (groupList_name.isEmpty() || groupList_name.size() == 0) {
+                    Toast.makeText(AddContactActivity.this, "그룹이 없습니다. 그룹을 생성해주세요.", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(AddContactActivity.this, AddGroupActivity.class);
+                    startActivity(intent);
+                } else {
+                    setGroupDialog();
+                }
+            });
+        }
 
         addContactActivity_editText_phoneNumber.addTextChangedListener(new PhoneNumberFormattingTextWatcher());
         addContactActivity_editText_companyNumber.addTextChangedListener(new PhoneNumberFormattingTextWatcher());
         addContactActivity_editText_faxNumber.addTextChangedListener(new PhoneNumberFormattingTextWatcher());
 
-        if (modifyContact != null) {
+        if (modifyMyContact == null && modifyContact == null) {
+            addContactActivity_toolbar.setTitle("연락처 추가");
+        } else if (modifyMyContact != null) {
+            addContactActivity_editText_name.setText(modifyMyContact.getName());
+            addContactActivity_editText_responsibility.setText(modifyMyContact.getResponsibility());
+            addContactActivity_editText_department.setText(modifyMyContact.getDepartment());
+            addContactActivity_editText_company.setText(modifyMyContact.getCompany());
+            if (modifyMyContact.getCardImageThumbnail() != null && modifyMyContact.getCardImageThumbnail().length() > 0) {
+                Glide.with(AddContactActivity.this).load(modifyMyContact.getCardImageThumbnail()).into(addContactActivity_imageView_card);
+                addContactActivity_editText_card_default.setVisibility(View.INVISIBLE);
+            }
+            if (modifyMyContact.getProfileThumbnail() != null && modifyMyContact.getProfileThumbnail().length() > 0) {
+                Glide.with(AddContactActivity.this).load(modifyMyContact.getProfileThumbnail()).into(addContactActivity_circleImageView_profile);
+            }
+            addContactActivity_editText_memo.setText(modifyMyContact.getMemo());
+            addContactActivity_editText_phoneNumber.setText(modifyMyContact.getPhone());
+            addContactActivity_editText_companyNumber.setText(modifyMyContact.getCompanyPhone());
+            addContactActivity_editText_faxNumber.setText(modifyMyContact.getFaxPhone());
+            addContactActivity_editText_email.setText(modifyMyContact.getEmail());
+            addContactActivity_editText_companyAddress.setText(modifyMyContact.getCompanyAddress());
+            if (modifyMyContact.getFacebookAddress().length() > 0)
+                addContactActivity_editText_facebook.setText(modifyMyContact.getFacebookAddress());
+            if (modifyMyContact.getGoogleAddress().length() > 0)
+                addContactActivity_editText_google.setText(modifyMyContact.getGoogleAddress());
+            if (modifyMyContact.getLinkedinAddress().length() > 0)
+                addContactActivity_editText_linkedIn.setText(modifyMyContact.getLinkedinAddress());
+            if (modifyMyContact.getInstagramAddress().length() > 0)
+                addContactActivity_editText_instagram.setText(modifyMyContact.getInstagramAddress());
+            addContactActivity_editText_anotherSns.setText(modifyMyContact.getExtraAddress());
+            addContactActivity_toolbar.setTitle("연락처 수정");
+        } else if (modifyContact != null) {
             addContactActivity_editText_name.setText(modifyContact.getName());
             addContactActivity_editText_responsibility.setText(modifyContact.getResponsibility());
             addContactActivity_editText_department.setText(modifyContact.getDepartment());
             addContactActivity_editText_company.setText(modifyContact.getCompany());
             addContactActivity_editText_memo.setText(modifyContact.getMemo());
-            if (modifyContact.getGroup().size() > 0) {
+            if (modifyContact.getCardImageThumbnail() != null && modifyContact.getCardImageThumbnail().length() > 0) {
+                Glide.with(AddContactActivity.this).load(modifyContact.getCardImageThumbnail()).into(addContactActivity_imageView_card);
+                addContactActivity_editText_card_default.setVisibility(View.INVISIBLE);
+            }
+            if (modifyContact.getProfileThumbnail() != null && modifyContact.getProfileThumbnail().length() > 0) {
+                Glide.with(AddContactActivity.this).load(modifyContact.getProfileThumbnail()).into(addContactActivity_circleImageView_profile);
+            }
+            if (modifyContact.getAppGroup().size() > 0) {
                 String groupText = "";
-                for (int i = 0; i < modifyContact.getGroup().size(); i++) {
-                    if (i == modifyContact.getGroup().size() - 1) {
-                        groupText += modifyContact.getGroup().get(i).getName();
-                    } else groupText += modifyContact.getGroup().get(i).getName() + " , ";
+                for (int i = 0; i < modifyContact.getAppGroup().size(); i++) {
+                    if (i == modifyContact.getAppGroup().size() - 1) {
+                        groupText += modifyContact.getAppGroup().get(i).getName();
+                    } else groupText += modifyContact.getAppGroup().get(i).getName() + " , ";
                 }
                 addContactActivity_textView_group.setText(groupText);
             }
@@ -315,7 +395,7 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             addContactActivity_editText_faxNumber.setText(modifyContact.getFaxPhone());
             addContactActivity_editText_email.setText(modifyContact.getEmail());
             addContactActivity_editText_companyAddress.setText(modifyContact.getCompanyAddress());
-            if (modifyContact.getFacebookAddress().length() > 0 )
+            if (modifyContact.getFacebookAddress().length() > 0)
                 addContactActivity_editText_facebook.setText(modifyContact.getFacebookAddress());
             if (modifyContact.getGoogleAddress().length() > 0)
                 addContactActivity_editText_google.setText(modifyContact.getGoogleAddress());
@@ -325,9 +405,8 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                 addContactActivity_editText_instagram.setText(modifyContact.getInstagramAddress());
             addContactActivity_editText_anotherSns.setText(modifyContact.getExtraAddress());
             addContactActivity_toolbar.setTitle("연락처 수정");
-        } else {
-            addContactActivity_toolbar.setTitle("연락처 추가");
         }
+
         editTextSetSelection(addContactActivity_editText_name);
         editTextSetSelection(addContactActivity_editText_responsibility);
         editTextSetSelection(addContactActivity_editText_department);
@@ -366,7 +445,6 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             cardImageClicked = true;
             profileImageClicked = false;
         }
-
         setCameraDialog();
     }
 
@@ -399,11 +477,10 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             addContact = new AppContact();
             initAddContact(addContact);
 
-            if (modifyContact == null) {
+            if (modifyContact == null && modifyMyContact == null) {
                 for (AppContact contact : contactListFromMain) {
                     if (contact.getPhone().equals(addContactActivity_editText_phoneNumber.getText().toString())) {
                         Toast.makeText(AddContactActivity.this, "이미 저장한 연락처가 있습니다.", Toast.LENGTH_SHORT).show();
-//                    duplicationContactDialog(contact.getId());
                         duplicationId = contact.getId();
                         isDuplication = true;
                         break;
@@ -414,8 +491,10 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                 } else {
                     postContact(addContact);
                 }
-            } else {
+            } else if (modifyContact != null) {
                 addContact.setId(modifyContactId);
+                postContact(addContact);
+            } else if (modifyMyContact != null) {
                 postContact(addContact);
             }
         }
@@ -440,11 +519,11 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
     }
 
     public void loadGroupList() {
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList("abcd")
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getGroupList(WhoRUApplication.getSessionId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(_groupList -> {
-                    groupList = _groupList;
+                    appGroupList = _groupList;
                     groupList_name.clear();
                     for (int i = 0; i < _groupList.getTotal(); i++) {
                         groupList_name.add(_groupList.getData().get(i).getName());
@@ -456,52 +535,106 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
     }
 
     public void postContact(AppContact addContact) {
-        if (modifyContact == null) {
+        if (modifyContact == null && modifyMyContact == null) {
             if (addContact.getId() == 0) {
                 setRequestBody(addContact);
-                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().addOrModifyContact("abcd", selected_groupIdList, map, cardImage, card_backImage, profileImage)
+                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().addOrModifyContact(WhoRUApplication.getSessionId(), selected_groupIdList, map, cardImage, card_backImage, profileImage)
                         .subscribeOn(Schedulers.newThread())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(s -> {
                             if (s.equals("1")) {
-                                finish();
                                 if (_rxBus.hasObservers()) _rxBus.send(new AddContactSuccess());
                             } else
                                 Toast.makeText(AddContactActivity.this, "추가에 실패하였습니다.", Toast.LENGTH_SHORT).show();
-                        }, Throwable::printStackTrace, () -> removeCachePhoto()));
-            } else {
-                //편집의 경우 삭제후 추가 ..
-                RemovedContactList removedContactList = new RemovedContactList();
-                removedContactList.getData().add(addContact.getId());
-                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteContact("abcd", removedContactList)
+                        }, Throwable::printStackTrace, () -> {
+                            removeCachePhoto();
+                            finish();
+                        }));
+            }
+            //연락처 추가시 겹치는 번호 있을시 덮어쓰기
+            else {
+                RemovedAppContactList removedAppContactList = new RemovedAppContactList();
+                removedAppContactList.getData().add(addContact.getId());
+                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().deleteContact(WhoRUApplication.getSessionId(), removedAppContactList)
                         .flatMap(s -> {
                             addContact.setId(0);
                             setRequestBody(addContact);
-                            return WhoRURetrofit.getWhoRURetorfitInstance().addOrModifyContact("abcd", selected_groupIdList, map, cardImage, card_backImage, profileImage);
+                            return WhoRURetrofit.getWhoRURetorfitInstance().addOrModifyContact(WhoRUApplication.getSessionId(), selected_groupIdList, map, cardImage, card_backImage, profileImage);
                         })
                         .subscribeOn(Schedulers.newThread())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(s1 -> {
                             if (s1.equals("1")) {
-                                finish();
                                 if (_rxBus.hasObservers()) _rxBus.send(new AddContactSuccess());
                             } else
                                 Toast.makeText(AddContactActivity.this, "추가에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                        },Throwable::printStackTrace,() -> {
+                            removeCachePhoto();
+                            finish();
                         }));
             }
-        } else {
+        }
+        //연락처 수정
+        else if (modifyContact != null) {
             addContact.setId(modifyContact.getId());
             setRequestBody(addContact);
-            compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().addOrModifyContact("abcd", selected_groupIdList, map, cardImage, card_backImage, profileImage)
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(s -> {
-                        if (s.equals("1")) {
+            if (!deleteProfileImage && !deleteCardImage) {
+                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().addOrModifyContact(WhoRUApplication.getSessionId(), selected_groupIdList, map, cardImage, card_backImage, profileImage)
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(s -> {
+                            if (s.equals("1")) {
+                                if (_rxBus.hasObservers()) _rxBus.send(new AddContactSuccess());
+                            } else
+                                Toast.makeText(AddContactActivity.this, "추가에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                        }, Throwable::printStackTrace,() -> {
+                            removeCachePhoto();
                             finish();
-                            //rxbus ->갱신
-                        } else
-                            Toast.makeText(AddContactActivity.this, "추가에 실패하였습니다.", Toast.LENGTH_SHORT).show();
-                    }, Throwable::printStackTrace));
+                        }));
+            } else {
+                deleteImageContact.setId(modifyContact.getId());
+                compositeSubscription
+                        .add(WhoRURetrofit.getWhoRURetorfitInstance().addOrModifyContact(WhoRUApplication.getSessionId(), selected_groupIdList, map, cardImage, card_backImage, profileImage)
+                                .flatMap(s -> WhoRURetrofit.getWhoRURetorfitInstance().deleteContactImage(WhoRUApplication.getSessionId(), deleteImageContact))
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(r -> {
+                                    if (_rxBus.hasObservers()) _rxBus.send(new AddContactSuccess());
+                                }, Throwable::printStackTrace,() -> {
+                                    removeCachePhoto();
+                                    finish();
+                                }));
+            }
+        } else if (modifyMyContact != null) {
+            setRequestBody(addContact);
+            if (!deleteProfileImage && !deleteCardImage) {
+                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyMyInfo(WhoRUApplication.getSessionId(), map, cardImage, card_backImage, profileImage)
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(s -> {
+                            if (s.equals("1")) {
+                                if (_rxBus.hasObservers()) _rxBus.send(new ModifyMyContact());
+                            } else
+                                Toast.makeText(AddContactActivity.this, "추가에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                        }, Throwable::printStackTrace,() -> {
+                            removeCachePhoto();
+                            finish();
+                        }));
+            } else {
+                compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyMyInfo(WhoRUApplication.getSessionId(), map, cardImage, card_backImage, profileImage)
+                        .flatMap(s -> WhoRURetrofit.getWhoRURetorfitInstance().deleteContactMyImage(WhoRUApplication.getSessionId(), deleteImageContact))
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(s1 -> {
+                            if (s1.equals("1")) {
+                                if (_rxBus.hasObservers()) _rxBus.send(new ModifyMyContact());
+                            } else
+                                Toast.makeText(AddContactActivity.this, "추가에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                        },Throwable::printStackTrace,() -> {
+                            removeCachePhoto();
+                            finish();
+                        }));
+            }
         }
     }
 
@@ -532,13 +665,13 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                     selected_groupIdList = new ArrayList<>();
                     if (text.length > 0) {
                         for (int j = 0; j < text.length; j++) {
-                            for (int i = 0; i < groupList.getTotal(); i++) {
-                                if (text[j].toString().equals(groupList.getData().get(i).getName())) {
-                                    selected_groupIdList.add(groupList.getData().get(i).getId());
+                            for (int i = 0; i < appGroupList.getTotal(); i++) {
+                                if (text[j].toString().equals(appGroupList.getData().get(i).getName())) {
+                                    selected_groupIdList.add(appGroupList.getData().get(i).getId());
                                     if (j < text.length - 1)
-                                        selectedGroupName += groupList.getData().get(i).getName() + " , ";
+                                        selectedGroupName += appGroupList.getData().get(i).getName() + " , ";
                                     else
-                                        selectedGroupName += groupList.getData().get(i).getName();
+                                        selectedGroupName += appGroupList.getData().get(i).getName();
                                     break;
                                 }
                             }
@@ -572,6 +705,8 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                                 addContactActivity_circleImageView_profile.setImageResource(R.drawable.ic_regit_user);
                                 profileResultUri = null;
                                 profileImage = null;
+                                deleteProfileImage = true;
+                                deleteImageContact.setProfileImage("1");
                             }
                             if (cardImageClicked) {
                                 addContactActivity_imageView_card.setImageResource(0);
@@ -580,6 +715,9 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                                 cardResultUri = null;
                                 cardImage = null;
                                 card_backImage = null;
+                                deleteCardImage = true;
+                                deleteImageContact.setCardImage("1");
+                                deleteImageContact.setCardImage_back("1");
                             }
                             break;
                     }
@@ -630,6 +768,9 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         if (profileResultUri != null) {
             profileCropFile = new File(profileResultUri.getPath());
             profileImage = MultipartBody.Part.createFormData("_profileImage", profileCropFile.getName(), RequestBody.create(MediaType.parse("image/jpg"), profileCropFile));
+            deleteProfileImage = false;
+            if (deleteImageContact != null)
+                deleteImageContact.setProfileImage("");
         } else
             profileImage = null;
 
@@ -637,9 +778,15 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             cardCropFile = new File(cardResultUri.getPath());
             cardImage = MultipartBody.Part.createFormData("_cardImage", cardCropFile.getName(), RequestBody.create(MediaType.parse("image/jpg"), cardCropFile));
             card_backImage = MultipartBody.Part.createFormData("_cardImage1", cardCropFile.getName(), RequestBody.create(MediaType.parse("image/jpg"), cardCropFile));
-        } else
+            deleteCardImage = false;
+            if (deleteImageContact != null) {
+                deleteImageContact.setCardImage_back("");
+                deleteImageContact.setCardImage("");
+            }
+        } else {
             cardImage = null;
-        card_backImage = null;
+            card_backImage = null;
+        }
     }
 
     public void removeCachePhoto() {
@@ -664,5 +811,29 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             }
             cardBackResultUri = null;
         }
+    }
+
+    public void getPermission() {
+        TedPermission tedPermission = new TedPermission(getApplicationContext());
+        tedPermission
+                .setPermissionListener(permissionlistener)
+                .setDeniedMessage("If you reject permission,you can not use this service\n\nPlease turn on permissions at [Setting] > [Permission]")
+                .setPermissions(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .check();
+    }
+
+    private PermissionListener permissionlistener = new PermissionListener() {
+        @Override
+        public void onPermissionGranted() {
+
+        }
+
+        @Override
+        public void onPermissionDenied(ArrayList<String> deniedPermissions) {
+            Toast.makeText(AddContactActivity.this, "Permission Denied\n" + deniedPermissions.toString(), Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    public class ModifyMyContact {
     }
 }

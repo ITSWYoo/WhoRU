@@ -10,10 +10,13 @@ import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.google.firebase.messaging.RemoteMessage;
 import com.yoo.ymh.whoru.R;
+import com.yoo.ymh.whoru.view.activity.LoginActivity;
 import com.yoo.ymh.whoru.view.activity.MainActivity;
+import com.yoo.ymh.whoru.view.activity.SplahActivity;
 
 public class MyFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService{
 
@@ -22,14 +25,16 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        sendNotification(remoteMessage.getData().get("message"));
+        String updatedString =null;
+        updatedString = remoteMessage.getData().get("_name") + "님의 정보가 변경되었습니다.";
+        sendNotification(updatedString);
     }
 
     public MyFirebaseMessagingService() {
     }
 
     private void sendNotification(String messageBody) {
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, SplahActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                 PendingIntent.FLAG_ONE_SHOT);
@@ -37,7 +42,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("FCM Push Test")
+                .setContentTitle("WhoRU")
                 .setContentText(messageBody)
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)

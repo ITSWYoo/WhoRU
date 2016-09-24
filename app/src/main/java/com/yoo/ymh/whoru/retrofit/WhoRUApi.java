@@ -1,17 +1,19 @@
 package com.yoo.ymh.whoru.retrofit;
 
+import com.yoo.ymh.whoru.model.AppAlarmList;
 import com.yoo.ymh.whoru.model.AppContact;
 import com.yoo.ymh.whoru.model.AppContactList;
-import com.yoo.ymh.whoru.model.Group;
-import com.yoo.ymh.whoru.model.GroupItem;
-import com.yoo.ymh.whoru.model.GroupList;
-import com.yoo.ymh.whoru.model.RemovedContactList;
+import com.yoo.ymh.whoru.model.AppGroup;
+import com.yoo.ymh.whoru.model.AppGroupItem;
+import com.yoo.ymh.whoru.model.AppGroupList;
+import com.yoo.ymh.whoru.model.AppUser;
+import com.yoo.ymh.whoru.model.FcmToken;
+import com.yoo.ymh.whoru.model.RemovedAppContactList;
 import com.yoo.ymh.whoru.view.activity.DetailContactActivity;
 import com.yoo.ymh.whoru.view.activity.ModifyGroupMemberActivity;
 import com.yoo.ymh.whoru.view.fragment.GroupFragment;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import okhttp3.MultipartBody;
@@ -44,7 +46,7 @@ public interface WhoRUApi {
     Observable<AppContact> getLocalDetailContact(@Query(QUERY_SESSIONID)String sessionId , @Query("_id")int id);
 
     @GET("group")                   //그룹리스트
-    Observable<GroupList> getGroupList(@Query(QUERY_SESSIONID)String sessionId);
+    Observable<AppGroupList> getGroupList(@Query(QUERY_SESSIONID)String sessionId);
 //    @Part("_group") ArrayList<Integer> groupList
 
     @Multipart
@@ -54,18 +56,23 @@ public interface WhoRUApi {
                                           @Part MultipartBody.Part cardImage_back,
                                           @Part MultipartBody.Part profileImage);
 
-    //연락처삭제 한명밖에안되자나씨벌
+    //사진 삭제
+    @HTTP(method = "DELETE", path = "contact/image", hasBody = true)
+    Observable<String> deleteContactImage(@Query(QUERY_SESSIONID)String sessionId, @Body AppContact appContact);
+
+    //연락처삭제
     @HTTP(method = "DELETE", path = "contact", hasBody = true)
-    Observable<String> deleteContact(@Query(QUERY_SESSIONID)String sessionId, @Body RemovedContactList removedContactList);
+    Observable<String> deleteContact(@Query(QUERY_SESSIONID)String sessionId, @Body RemovedAppContactList removedAppContactList);
 
     @PUT("group/member")               //그룹원수정
     Observable<String> modifyGroupMemberList(@Query(QUERY_SESSIONID)String sessionId, @Body ModifyGroupMemberActivity.ModifyGroupMember modifyGroupMember);
 //    @GET("group/contact")
 //
     @GET("group/contact")
-    Observable<GroupList> getGroupAndMemberList(@Query(QUERY_SESSIONID)String sessionId);
+    Observable<AppGroupList> getGroupAndMemberList(@Query(QUERY_SESSIONID)String sessionId);
+
     @POST("group")            //그룹 추가
-    Observable<String> addGroup(@Query(QUERY_SESSIONID)String sessionId, @Body Group group);
+    Observable<String> addGroup(@Query(QUERY_SESSIONID)String sessionId, @Body AppGroup appGroup);
 
     @HTTP(method = "DELETE", path = "group", hasBody = true)          //그룹삭제
     Observable<String> deleteGroup(@Query(QUERY_SESSIONID)String sessionId, @Body GroupFragment.DeleteGroupId group);
@@ -77,6 +84,31 @@ public interface WhoRUApi {
     Observable<String> modifyGroup(@Query(QUERY_SESSIONID)String sessionId, @Body DetailContactActivity.ModifyGroup modifyGroupContact);
 
     @PUT("group")
-    Observable<String> modifyGroupName(@Query(QUERY_SESSIONID)String sessionId, @Body GroupItem.ModifyGroupName modifyGroupName);
+    Observable<String> modifyGroupName(@Query(QUERY_SESSIONID)String sessionId, @Body AppGroupItem.ModifyGroupName modifyGroupName);
+
+    @PUT("auth/login")
+    Observable<AppUser> loginOrJoinUser(@Body AppContact appContact);
+
+    @GET("info")
+    Observable<AppContact> getMyInfo(@Query(QUERY_SESSIONID) String sessionId);
+
+    @Multipart
+    @PUT("info")
+    Observable<String> modifyMyInfo(@Query(QUERY_SESSIONID) String sessionId, @PartMap Map<String,RequestBody> map ,
+                                    @Part MultipartBody.Part cardImage,
+                                    @Part MultipartBody.Part cardImage_back,
+                                    @Part MultipartBody.Part profileImage );
+
+    @HTTP(method = "DELETE", path = "info/image", hasBody = true)
+    Observable<String> deleteContactMyImage(@Query(QUERY_SESSIONID)String sessionId, @Body AppContact appContact);
+
+    @GET("unregister")
+    Observable<String> unregisterMyContact(@Query(QUERY_SESSIONID) String sessionId);
+
+    @PUT("fcm")
+    Observable<Integer> sendFcmToken(@Query(QUERY_SESSIONID) String sessionId, @Body FcmToken fcmToken);
+
+    @GET("fcm")
+    Observable<AppAlarmList> getAlarmList(@Query(QUERY_SESSIONID) String sessionId);
 }
 

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CheckBox;
@@ -17,9 +16,10 @@ import com.google.gson.annotations.SerializedName;
 import com.yoo.ymh.whoru.R;
 import com.yoo.ymh.whoru.adapter.ContactRecyclerViewAdapter;
 import com.yoo.ymh.whoru.model.AppContact;
-import com.yoo.ymh.whoru.model.Group;
+import com.yoo.ymh.whoru.model.AppGroup;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
 import com.yoo.ymh.whoru.util.RxBus;
+import com.yoo.ymh.whoru.util.WhoRUApplication;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public class ModifyGroupMemberActivity extends AppCompatActivity {
     private List<AppContact> appContactList;
     private RxBus _rxbus;
     private CompositeSubscription compositeSubscription;
-    private Group group;
+    private AppGroup appGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,14 +96,14 @@ public class ModifyGroupMemberActivity extends AppCompatActivity {
     }
 
     public void initData() {
-        group = getIntent().getParcelableExtra("groupInfo");
+        appGroup = getIntent().getParcelableExtra("groupInfo");
         appContactList = new ArrayList<>();
-        appContactList = group.getmGroupMembers();
+        appContactList = appGroup.getmGroupMembers();
         loadContactList();
     }
 
     public void loadContactList() {
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getAllContactList("abcd")
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getAllContactList(WhoRUApplication.getSessionId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(appContactList1 -> {
@@ -119,7 +119,7 @@ public class ModifyGroupMemberActivity extends AppCompatActivity {
     }
     public void modifyGroupMemeber(){
         ModifyGroupMember modifyGroupMember= new ModifyGroupMember();
-        modifyGroupMember.setGroup(group.getId());
+        modifyGroupMember.setGroup(appGroup.getId());
         List<Integer> modifyGroupMemberId = new ArrayList<>();
         for(AppContact c : contactRecyclerViewAdapter.getCheckedItemList())
         {
@@ -127,7 +127,7 @@ public class ModifyGroupMemberActivity extends AppCompatActivity {
         }
         if(modifyGroupMemberId.size()==0) modifyGroupMemberId.add(0);
         modifyGroupMember.setList(modifyGroupMemberId);
-        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyGroupMemberList("abcd",modifyGroupMember)
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().modifyGroupMemberList(WhoRUApplication.getSessionId(),modifyGroupMember)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(s ->{

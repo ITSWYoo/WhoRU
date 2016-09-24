@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Created by Yoo on 2016-08-14.
  */
-public class Group implements ExpandableListItem, Parcelable {
+public class AppGroup implements ExpandableListItem, Parcelable {
     @SerializedName("_id")
     @Expose
     private int id;
@@ -86,7 +86,7 @@ public class Group implements ExpandableListItem, Parcelable {
         this.groupMemberNum = groupMemberNum;
     }
 
-    public Group() {
+    public AppGroup() {
         this.mGroupMembers = new ArrayList<>();
     }
 
@@ -117,7 +117,7 @@ public class Group implements ExpandableListItem, Parcelable {
 
     @Override
     public String toString() {
-        return "Group{" +
+        return "AppGroup{" +
                 "mExpanded=" + mExpanded +
                 ", name='" + name + '\'' +
                 ", mGroupMembers=" + mGroupMembers +
@@ -138,7 +138,7 @@ public class Group implements ExpandableListItem, Parcelable {
         dest.writeInt(this.groupMemberNum);
     }
 
-    protected Group(Parcel in) {
+    protected AppGroup(Parcel in) {
         this.id = in.readInt();
         this.name = in.readString();
         this.mExpanded = in.readByte() != 0;
@@ -146,15 +146,15 @@ public class Group implements ExpandableListItem, Parcelable {
         this.groupMemberNum = in.readInt();
     }
 
-    public static final Parcelable.Creator<Group> CREATOR = new Parcelable.Creator<Group>() {
+    public static final Parcelable.Creator<AppGroup> CREATOR = new Parcelable.Creator<AppGroup>() {
         @Override
-        public Group createFromParcel(Parcel source) {
-            return new Group(source);
+        public AppGroup createFromParcel(Parcel source) {
+            return new AppGroup(source);
         }
 
         @Override
-        public Group[] newArray(int size) {
-            return new Group[size];
+        public AppGroup[] newArray(int size) {
+            return new AppGroup[size];
         }
     };
 }

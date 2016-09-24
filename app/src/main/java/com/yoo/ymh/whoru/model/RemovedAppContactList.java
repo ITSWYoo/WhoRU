@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Created by Yoo on 2016-09-10.
  */
-public class RemovedContactList {
+public class RemovedAppContactList {
         @SerializedName("data")
         @Expose
         private List<Integer> data = new ArrayList<>();

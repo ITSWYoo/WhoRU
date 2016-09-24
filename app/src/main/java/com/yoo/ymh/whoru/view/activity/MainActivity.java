@@ -1,11 +1,19 @@
 package com.yoo.ymh.whoru.view.activity;
 
-import com.facebook.FacebookSdk;
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.bumptech.glide.Glide;
 
 import android.Manifest;
+import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
@@ -23,19 +31,21 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginManager;
 import com.github.tamir7.contacts.Contact;
 import com.github.tamir7.contacts.Contacts;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.FirebaseInstanceIdService;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
-import com.kakao.auth.Session;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
 import com.yoo.ymh.whoru.adapter.MainViewPagerAdapter;
 import com.yoo.ymh.whoru.R;
+import com.yoo.ymh.whoru.fcm.MyFirebaseInstanceIDService;
 import com.yoo.ymh.whoru.model.AppContact;
 import com.yoo.ymh.whoru.model.AppContactList;
+import com.yoo.ymh.whoru.model.FcmToken;
 import com.yoo.ymh.whoru.retrofit.WhoRURetrofit;
 import com.yoo.ymh.whoru.util.PreferenceUtil;
 import com.yoo.ymh.whoru.util.RxBus;
@@ -50,6 +60,7 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import de.hdodenhof.circleimageview.CircleImageView;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.observables.ConnectableObservable;
 import rx.schedulers.Schedulers;
@@ -72,7 +83,10 @@ public class MainActivity extends AppCompatActivity
     @BindView(R.id.mainActivity_viewpager)
     ViewPager mainActivity_viewPager;
     @BindView(R.id.mainActivity_textView_card_default)
-    TextView detailContactActivity_textView_card_default;
+    TextView mainActivity_textView_card_default;
+    private View headerLayout;
+    private CircleImageView mainActivity_imageView_header;
+    private TextView mainActivity_textView_name;
     private RxBus _rxBus;
     private CompositeSubscription compositeSubscription;
     private MainViewPagerAdapter mainViewPagerAdapter;
@@ -82,6 +96,7 @@ public class MainActivity extends AppCompatActivity
 
     private int tabImge[] = {R.drawable.ic_contacts_black_48dp, R.drawable.ic_group_black_48dp, R.drawable.ic_notifications_black_48dp, R.drawable.ic_face_black_48dp};
     private final long FINISH_INTERVAL_TIME = 2000;
+    public static final int REQ_CODE_OVERLAY_PERMISSION = 9999;
     private long backPressedTime = 0;
 
     @Override
@@ -89,8 +104,15 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        getPermission();
+        String token = FirebaseInstanceId.getInstance().getToken();
+        FcmToken fcmToken = new FcmToken();
+        fcmToken.setToken(token);
         rxBusEvent();
+        getPermission();
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().sendFcmToken(WhoRUApplication.getSessionId(), fcmToken)
+                .subscribeOn(Schedulers.io())
+                .subscribe(s -> {
+                },Throwable::printStackTrace));
         initViews();
     }
 
@@ -116,42 +138,86 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_sign_out) {
             // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
+            new MaterialDialog.Builder(this)
+                    .title("계정 탈퇴")
+                    .content("탈퇴 하시면 모든 정보가 삭제됩니다.\n 그래도 탈퇴 하시겠습니까?")
+                    .positiveText("네")
+                    .onPositive((dialog, which) -> {
+                        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().unregisterMyContact(WhoRUApplication.getSessionId())
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(s -> {
+                                    if (PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regFacebookId() != null) {
+                                        PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedFacebookId(null);
+                                        LoginManager.getInstance().logOut();
+                                    }
+                                    if (PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regKakaoId() != null) {
+                                        PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedKakaoId(null);
+                                        UserManagement.requestLogout(new LogoutResponseCallback() {
+                                            @Override
+                                            public void onCompleteLogout() {
+                                            }
+                                        });
+                                    }
+                                    Intent intent = new Intent(MainActivity.this, SplahActivity.class);
+                                    startActivity(intent);
+                                    finish();
+                                }));
+                    })
+                    .negativeText("아니오")
+                    .show();
+        } else if (id == R.id.nav_open_source_library) {
+        } else if (id == R.id.nav_log_out) {
+            new MaterialDialog.Builder(this)
+                    .title("로그아웃")
+                    .content("로그아웃 하시겠습니까?")
+                    .positiveText("네")
+                    .onPositive((dialog, which) -> {
+                        if (PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regFacebookId() != null) {
+                            PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedFacebookId(null);
+                            LoginManager.getInstance().logOut();
+                        }
+                        if (PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regKakaoId() != null) {
+                            UserManagement.requestLogout(new LogoutResponseCallback() {
+                                @Override
+                                public void onCompleteLogout() {
+                                    PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedKakaoId(null);
+                                }
+                            });
+                        }
+                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                        startActivity(intent);
+                        finish();
+                    })
+                    .negativeText("아니오")
+                    .show();
             //페이스북 로그인
-            if(PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regFacebookId()!=null) {
-                PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedFacebookId(null);
-                LoginManager.getInstance().logOut();
-            }
-            if(PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).regKakaoId()!=null) {
-                UserManagement.requestLogout(new LogoutResponseCallback() {
-                    @Override
-                    public void onCompleteLogout() {
-                        PreferenceUtil.instance(WhoRUApplication.getWhoruContext()).putRedKakaoId(null);
-                    }
-                });
-            }
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            startActivity(intent);
-            finish();
-        } else if (id == R.id.nav_manage) {
 
-        } else if (id == R.id.nav_send) {
-            getMyLocalContactList();
-            if (appContactList.size() == 0 || appContactList.isEmpty()) {
-                Toast.makeText(getApplicationContext(), "이미 연락처가 동기화 되어있습니다.", Toast.LENGTH_SHORT).show();
-            } else {
-                AppContactList localAppContactList = new AppContactList();
-                localAppContactList.getData().addAll(appContactList);
-                WhoRURetrofit.getWhoRURetorfitInstance().sendLocalcontactList("abcd", localAppContactList)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(integer -> _rxBus.send(new LocalContactToContactFragment()));
-            }
+        } else if (id == R.id.nav_manage) {
+            Intent intent = new Intent(MainActivity.this, ManageActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_localContact) {
+            new MaterialDialog.Builder(this)
+                    .title("연락처 가져오기")
+                    .content("연락처를 동기화 하시겠습니까?")
+                    .positiveText("네")
+                    .onPositive((dialog, which) -> {
+                        getMyLocalContactList();
+                        if (appContactList.size() == 0 || appContactList.isEmpty()) {
+                            Toast.makeText(getApplicationContext(), "이미 연락처가 동기화 되어있습니다.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            AppContactList localAppContactList = new AppContactList();
+                            localAppContactList.getData().addAll(appContactList);
+                            WhoRURetrofit.getWhoRURetorfitInstance().sendLocalcontactList(WhoRUApplication.getSessionId(), localAppContactList)
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(integer -> _rxBus.send(new LocalContactToContactFragment()));
+                        }
+                    }).negativeText("아니오")
+                    .show();
+
         }
         mainActivity_drawerLayout.closeDrawer(GravityCompat.START);
         return true;
@@ -172,7 +238,7 @@ public class MainActivity extends AppCompatActivity
         tedPermission
                 .setPermissionListener(permissionlistener)
                 .setDeniedMessage("If you reject permission,you can not use this service\n\nPlease turn on permissions at [Setting] > [Permission]")
-                .setPermissions(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS, Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .setPermissions(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)
                 .check();
     }
 
@@ -186,6 +252,7 @@ public class MainActivity extends AppCompatActivity
                     mainActivity_tabLayout.getTabAt(i).setIcon(tabImge[i]);
                 }
             }
+            startOverlayWindowService(getApplicationContext());
         }
 
         @Override
@@ -198,7 +265,7 @@ public class MainActivity extends AppCompatActivity
         Contacts.initialize(MainActivity.this);
         myLocalContactList = (ArrayList<Contact>) Contacts.getQuery().find();
         appContactList = new ArrayList<>();
-        AppContact item= new AppContact();
+        AppContact item = new AppContact();
 
         //휴대폰 연락처 앱 연락처로가져오기
         for (Contact c : myLocalContactList) {
@@ -257,6 +324,27 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setNavigation() {
+
+        headerLayout = mainActivity_navigationView.getHeaderView(0);
+
+        mainActivity_imageView_header = (CircleImageView) headerLayout.findViewById(R.id.mainActivity_imageView_header);
+        mainActivity_textView_name = (TextView) headerLayout.findViewById(R.id.mainActivity_textView_name);
+
+        compositeSubscription.add(WhoRURetrofit.getWhoRURetorfitInstance().getMyInfo(WhoRUApplication.getSessionId())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(appContact -> {
+                    if (appContact.getProfileThumbnail() != null && appContact.getProfileThumbnail().length() > 0) {
+                        Glide.with(MainActivity.this).load(appContact.getProfileThumbnail()).into(mainActivity_imageView_header);
+                    }
+                    mainActivity_textView_name.setText(appContact.getName());
+
+                    if (appContact.getCardImageThumbnail() != null && appContact.getCardImageThumbnail().length() > 0) {
+                        Glide.with(MainActivity.this).load(appContact.getCardImageThumbnail()).into(mainActivity_imageView_card);
+                        mainActivity_textView_card_default.setVisibility(View.GONE);
+                    }
+                }));
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mainActivity_drawerLayout, mainActivity_toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
         };
@@ -283,10 +371,10 @@ public class MainActivity extends AppCompatActivity
                             startActivity(intent);
                         });
 
-                        detailContactActivity_textView_card_default.setVisibility(View.INVISIBLE);
+                        mainActivity_textView_card_default.setVisibility(View.GONE);
                         break;
                     case 1:
-                        mainActivity_toolbar.setTitle("Group");
+                        mainActivity_toolbar.setTitle("AppGroup");
                         mainActivity_fab.setImageResource(R.drawable.ic_group_add_white_48dp);
                         mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.VISIBLE);
@@ -295,19 +383,19 @@ public class MainActivity extends AppCompatActivity
                             startActivity(intent);
                         });
 
-                        detailContactActivity_textView_card_default.setVisibility(View.INVISIBLE);
+                        mainActivity_textView_card_default.setVisibility(View.GONE);
                         break;
                     case 2:
                         mainActivity_toolbar.setTitle("Alarms");
                         mainActivity_imageView_card.setVisibility(View.GONE);
                         mainActivity_fab.setVisibility(View.INVISIBLE);
-                        detailContactActivity_textView_card_default.setVisibility(View.INVISIBLE);
+                        mainActivity_textView_card_default.setVisibility(View.GONE);
                         break;
                     case 3:
                         mainActivity_toolbar.setTitle("My Infomation");
                         mainActivity_imageView_card.setVisibility(View.VISIBLE);
                         mainActivity_fab.setVisibility(View.INVISIBLE);
-                        detailContactActivity_textView_card_default.setVisibility(View.VISIBLE);
+                        mainActivity_textView_card_default.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -348,5 +436,30 @@ public class MainActivity extends AppCompatActivity
     }
 
     public class LocalContactToContactFragment {
+    }
+
+    public void startOverlayWindowService(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && !Settings.canDrawOverlays(context)) {
+            onObtainingPermissionOverlayWindow();
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    public void onObtainingPermissionOverlayWindow() {
+        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+        startActivityForResult(intent, REQ_CODE_OVERLAY_PERMISSION);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQ_CODE_OVERLAY_PERMISSION:
+                break;
+
+            default:
+                break;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }

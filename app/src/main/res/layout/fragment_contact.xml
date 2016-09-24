@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#ffffff"
-    android:orientation="vertical"
     android:padding="10dp"
-    tools:context=".view.fragment.ContactFragment">
+    tools:context=".view.fragment.ContactFragment"
+    android:orientation="vertical">
 
     <RelativeLayout
         android:id="@+id/contactFragment_manageLayout"
